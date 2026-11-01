@@ -47,7 +47,11 @@ export async function loadMonthView(requested?: string | string[]): Promise<Mont
   if (!bundle) return null;
 
   const inMonth = new Set(bundle.rooms.map((r) => r.room_id));
-  const rooms = allRooms.filter((r) => inMonth.has(r.id));
+  // Show each room under the name it had that month (names follow tenants, numbers don't).
+  const nameOf = new Map(bundle.rooms.map((r) => [r.room_id, r.room_name]));
+  const rooms = allRooms
+    .filter((r) => inMonth.has(r.id))
+    .map((r) => ({ ...r, name: nameOf.get(r.id)?.trim() || r.name }));
   const summary = calculateBills(toBillInput(bundle, rooms));
   const i = months.indexOf(month);
   return {

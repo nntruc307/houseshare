@@ -17,13 +17,26 @@ function admin() {
   }
 }
 
-export async function updateRent(formData: FormData) {
+/** Current name and default rent of a room. A new name also applies to months still in draft; closed months keep theirs. */
+export async function updateRoom(formData: FormData) {
   await requireAdmin();
   const roomId = String(formData.get("roomId") ?? "");
   const rent = Number(String(formData.get("rent") ?? "").replace(/[^\d]/g, ""));
+  const name = String(formData.get("name") ?? "").trim().slice(0, 60);
   if (!roomId || !Number.isFinite(rent)) return;
   const supabase = await createClient();
-  await supabase.from("rooms").update({ default_rent: rent }).eq("id", roomId);
+  const { data: before } = await supabase.from("rooms").select("name").eq("id", roomId).single();
+  await supabase
+    .from("rooms")
+    .update(name ? { default_rent: rent, name } : { default_rent: rent })
+    .eq("id", roomId);
+  if (name && before && before.name !== name) {
+    const { data: drafts } = await supabase.from("periods").select("id").eq("status", "draft");
+    const ids = (drafts ?? []).map((d) => d.id);
+    if (ids.length > 0) {
+      await supabase.from("period_rooms").update({ room_name: name }).eq("room_id", roomId).in("period_id", ids);
+    }
+  }
   revalidatePath("/", "layout");
 }
 

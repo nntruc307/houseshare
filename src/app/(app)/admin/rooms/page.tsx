@@ -1,4 +1,4 @@
-import { moveMember, removeMember, updateRent } from "@/app/actions/rooms";
+import { moveMember, removeMember, updateRoom } from "@/app/actions/rooms";
 import { AddMemberForm } from "@/components/add-member-form";
 import { MoneyField } from "@/components/money-input";
 import { ResetPasswordButton } from "@/components/reset-password-button";
@@ -33,14 +33,21 @@ export default async function AdminRoomsPage() {
               <span className="text-xs text-muted">{members.length} người</span>
             </div>
 
-            <form action={updateRent} className="mb-3 flex items-end gap-2">
+            <form action={updateRoom} className="mb-3 grid grid-cols-[1fr_auto] items-end gap-2">
               <input type="hidden" name="roomId" value={room.id} />
-              <label className="flex flex-1 flex-col gap-1 text-[13px] text-ink/80">
+              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-[13px] text-ink/80">
+                Tên phòng
+                <input name="name" defaultValue={room.name} maxLength={60} required className={inputClass} />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-[13px] text-ink/80">
                 Giá phòng mặc định
                 <MoneyField name="rent" defaultValue={room.default_rent} className={`${inputClass} tabular-nums`} />
               </label>
               <SubmitButton className={buttonClass.soft}>Lưu</SubmitButton>
             </form>
+            <p className="-mt-1 mb-3 text-xs text-muted">
+              Đổi tên áp dụng cho tháng đang nháp và các tháng sau. Tháng đã chốt giữ tên cũ.
+            </p>
 
             <ul className="flex flex-col divide-y divide-line">
               {members.map((m) => {

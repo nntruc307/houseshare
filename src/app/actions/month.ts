@@ -14,6 +14,7 @@ type Payload = {
   electricityAmount: number | null;
   rooms: {
     roomId: string;
+    name?: string;
     rent: number;
     people: number;
     readings: { meterId: string; oldValue: number | null; newValue: number | null }[];
@@ -97,6 +98,7 @@ export async function saveMonth(_prev: FormState, formData: FormData): Promise<F
   const roomRows = p.rooms.map((r) => ({
     period_id: period.id,
     room_id: r.roomId,
+    room_name: typeof r.name === "string" && r.name.trim() ? r.name.trim().slice(0, 60) : null,
     rent: Math.max(0, Math.round(r.rent || 0)),
     people: Math.max(0, Math.round(r.people || 0)),
   }));

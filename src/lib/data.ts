@@ -43,6 +43,7 @@ export type PeriodRoom = {
   room_id: string;
   rent: number;
   people: number;
+  room_name: string | null; // name the room had that month; null -> rooms.name
   adjustment: number;
   adjustment_note: string | null;
   paid: boolean;

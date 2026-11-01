@@ -97,7 +97,7 @@ function buildState(
       return {
         roomId: room.id,
         code: room.code,
-        name: room.name,
+        name: saved?.room_name?.trim() || room.name,
         color: room.color,
         rent: saved?.rent ?? room.default_rent,
         people: saved?.people ?? counts.get(room.id) ?? before?.people ?? 1,

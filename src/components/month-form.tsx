@@ -26,6 +26,7 @@ const money = (n: number | null) => (n == null ? "" : formatMoneyInput(String(Ma
 
 type RoomDraft = {
   roomId: string;
+  name: string;
   rent: string;
   people: string;
   readings: { meterId: string; label: string; oldValue: string; newValue: string }[];
@@ -39,6 +40,7 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
   const [rooms, setRooms] = useState<RoomDraft[]>(
     initial.rooms.map((r) => ({
       roomId: r.roomId,
+      name: r.name,
       rent: money(r.rent),
       people: String(r.people),
       readings: r.readings.map((x) => ({
@@ -60,6 +62,7 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
       electricityAmount: num(amount),
       rooms: rooms.map((r) => ({
         roomId: r.roomId,
+        name: r.name.trim(),
         rent: num(r.rent) ?? 0,
         people: Number(r.people) || 0,
         readings: r.readings.map((x) => ({
@@ -142,10 +145,21 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
           <Card key={r.roomId}>
             <div className="mb-3 flex items-center gap-3">
               <RoomChip code={m.code} color={m.color} />
-              <p className="flex-1 font-bold">{m.name}</p>
+              <p className="flex-1 font-bold">{r.name.trim() || m.name}</p>
               <p className="text-right text-sm font-bold tabular-nums">{vnd(bill?.total ?? 0)} đ</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <label className="col-span-2 flex flex-col gap-1 text-[13px] text-ink/80">
+                Tên phòng tháng này
+                <input
+                  value={r.name}
+                  maxLength={60}
+                  disabled={locked}
+                  placeholder={m.name}
+                  onChange={(e) => patchRoom(r.roomId, { name: e.target.value })}
+                  className={inputClass}
+                />
+              </label>
               <label className="flex flex-col gap-1 text-[13px] text-ink/80">
                 Tiền phòng
                 <MoneyInput
