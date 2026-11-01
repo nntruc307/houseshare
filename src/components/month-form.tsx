@@ -6,6 +6,7 @@ import type { FormState } from "@/app/actions/auth";
 import { calculateBills, type ExpenseKind } from "@/lib/billing";
 import { vnd } from "@/lib/format";
 import type { MonthFormState } from "@/lib/month-form";
+import { MoneyInput, formatMoneyInput } from "@/components/money-input";
 import { Card, Notice, RoomChip, SectionLabel, buttonClass, inputClass } from "@/components/ui";
 
 const num = (s: string): number | null => {
@@ -21,6 +22,7 @@ const dec = (s: string): number | null => {
   return Number.isFinite(n) ? n : null;
 };
 const show = (n: number | null) => (n == null ? "" : String(n));
+const money = (n: number | null) => (n == null ? "" : formatMoneyInput(String(Math.round(n))));
 
 type RoomDraft = {
   roomId: string;
@@ -33,11 +35,11 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveMonth, {});
   const locked = initial.status === "closed";
   const [mainKwh, setMainKwh] = useState(show(initial.mainKwh));
-  const [amount, setAmount] = useState(show(initial.electricityAmount));
+  const [amount, setAmount] = useState(money(initial.electricityAmount));
   const [rooms, setRooms] = useState<RoomDraft[]>(
     initial.rooms.map((r) => ({
       roomId: r.roomId,
-      rent: String(r.rent),
+      rent: money(r.rent),
       people: String(r.people),
       readings: r.readings.map((x) => ({
         meterId: x.meterId,
@@ -48,7 +50,7 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
     })),
   );
   const [expenses, setExpenses] = useState(
-    initial.expenses.map((e) => ({ kind: e.kind as ExpenseKind, name: e.name, amount: show(e.amount) })),
+    initial.expenses.map((e) => ({ kind: e.kind as ExpenseKind, name: e.name, amount: money(e.amount) })),
   );
 
   const payload = useMemo(
@@ -127,14 +129,8 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
             />
           </label>
           <label className="flex flex-col gap-1 text-[13px] text-ink/80">
-            Tiền điện (đ)
-            <input
-              inputMode="numeric"
-              value={amount}
-              disabled={locked}
-              onChange={(e) => setAmount(e.target.value)}
-              className={field}
-            />
+            Tiền điện
+            <MoneyInput value={amount} disabled={locked} onValueChange={setAmount} className={field} />
           </label>
         </div>
       </Card>
@@ -151,12 +147,11 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1 text-[13px] text-ink/80">
-                Tiền phòng (đ)
-                <input
-                  inputMode="numeric"
+                Tiền phòng
+                <MoneyInput
                   value={r.rent}
                   disabled={locked}
-                  onChange={(e) => patchRoom(r.roomId, { rent: e.target.value })}
+                  onValueChange={(v) => patchRoom(r.roomId, { rent: v })}
                   className={field}
                 />
               </label>
@@ -218,14 +213,11 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
               ) : (
                 <span className="flex items-center text-[15px] font-medium">{e.name}</span>
               )}
-              <input
+              <MoneyInput
                 aria-label={`Số tiền ${e.name}`}
-                inputMode="numeric"
                 value={e.amount}
                 disabled={locked}
-                onChange={(ev) =>
-                  setExpenses((xs) => xs.map((x, j) => (j === i ? { ...x, amount: ev.target.value } : x)))
-                }
+                onValueChange={(v) => setExpenses((xs) => xs.map((x, j) => (j === i ? { ...x, amount: v } : x)))}
                 className={field}
               />
             </div>

@@ -1,5 +1,6 @@
 import { moveMember, removeMember, updateRent } from "@/app/actions/rooms";
 import { AddMemberForm } from "@/components/add-member-form";
+import { MoneyField } from "@/components/money-input";
 import { ResetPasswordButton } from "@/components/reset-password-button";
 import { SubmitButton } from "@/components/submit-button";
 import { Badge, Card, PageTitle, RoomChip, SectionLabel, buttonClass, inputClass } from "@/components/ui";
@@ -35,13 +36,8 @@ export default async function AdminRoomsPage() {
             <form action={updateRent} className="mb-3 flex items-end gap-2">
               <input type="hidden" name="roomId" value={room.id} />
               <label className="flex flex-1 flex-col gap-1 text-[13px] text-ink/80">
-                Giá phòng mặc định (đ)
-                <input
-                  name="rent"
-                  inputMode="numeric"
-                  defaultValue={room.default_rent}
-                  className={`${inputClass} tabular-nums`}
-                />
+                Giá phòng mặc định
+                <MoneyField name="rent" defaultValue={room.default_rent} className={`${inputClass} tabular-nums`} />
               </label>
               <SubmitButton className={buttonClass.soft}>Lưu</SubmitButton>
             </form>

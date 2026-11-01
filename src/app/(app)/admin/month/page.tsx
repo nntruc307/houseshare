@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { MonthChips } from "@/components/month-chips";
 import { MonthForm } from "@/components/month-form";
 import { Badge, PageTitle } from "@/components/ui";
 import { monthLabel } from "@/lib/format";
@@ -10,20 +10,18 @@ export default async function AdminMonthPage({ searchParams }: PageProps<"/admin
   return (
     <>
       <PageTitle title={monthLabel(state.month)} subtitle="Nhập số liệu tháng" />
-      <div className="flex flex-wrap items-center gap-2">
-        {state.status === "closed" ? <Badge tone="ok">Đã chốt</Badge> : null}
-        {state.status === "draft" ? <Badge tone="warn">Nháp</Badge> : null}
-        {state.status === "new" ? <Badge tone="brand">Tháng mới</Badge> : null}
-        <span className="flex-1" />
-        {months.slice(0, 4).map((m) => (
-          <Link
-            key={m.month}
-            href={`/admin/month?month=${m.month.slice(0, 7)}`}
-            className="rounded-full bg-surface px-3 py-1.5 text-xs font-semibold text-muted"
-          >
-            T{Number(m.month.slice(5, 7))}
-          </Link>
-        ))}
+      <div className="flex items-center gap-3">
+        <span className="shrink-0">
+          {state.status === "closed" ? <Badge tone="ok">Đã chốt</Badge> : null}
+          {state.status === "draft" ? <Badge tone="warn">Nháp</Badge> : null}
+          {state.status === "new" ? <Badge tone="brand">Tháng mới</Badge> : null}
+        </span>
+        <MonthChips
+          months={months.map((m) => m.month)}
+          selected={state.month}
+          href="/admin/month"
+          className="ml-auto"
+        />
       </div>
       <MonthForm key={state.month + state.status} initial={state} />
     </>

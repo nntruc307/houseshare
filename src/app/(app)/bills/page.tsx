@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { MonthChips } from "@/components/month-chips";
 import { setPaid } from "@/app/actions/bills";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { SubmitButton } from "@/components/submit-button";
@@ -34,22 +34,7 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
     <>
       <PageTitle title={monthLabel(view.month)} subtitle={view.draft ? "Hóa đơn cả nhà · bản nháp, chưa chốt" : "Hóa đơn cả nhà"} />
 
-      <nav className="flex gap-2" aria-label="Chọn tháng">
-        {view.prev ? (
-          <Link href={`/bills?month=${view.prev.slice(0, 7)}`} className={`${buttonClass.outline} flex-1`}>
-            ← {monthLabel(view.prev)}
-          </Link>
-        ) : (
-          <span className="flex-1" />
-        )}
-        {view.next ? (
-          <Link href={`/bills?month=${view.next.slice(0, 7)}`} className={`${buttonClass.outline} flex-1`}>
-            {monthLabel(view.next)} →
-          </Link>
-        ) : (
-          <span className="flex-1" />
-        )}
-      </nav>
+      <MonthChips months={view.months} selected={view.month} href="/bills" />
 
       {view.draft ? (
         <Notice tone="brand">Tháng này chưa chốt nên số tiền chỉ là tạm tính và chưa thu tiền.</Notice>
