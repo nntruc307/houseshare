@@ -29,7 +29,7 @@ export function CleaningPlan({
         return (
           <li
             key={slot.id}
-            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors ${
               current ? "bg-hl ring-2 ring-hl-line" : "bg-bg"
             }`}
           >

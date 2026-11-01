@@ -93,13 +93,13 @@ export const inputClass =
 
 export const buttonClass = {
   primary:
-    "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-4 text-[15px] font-semibold text-brand-ink disabled:opacity-60",
-  soft: "inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-soft px-4 text-[15px] font-semibold text-brand disabled:opacity-60",
-  ok: "inline-flex min-h-11 items-center justify-center rounded-xl bg-ok px-4 text-[15px] font-semibold text-white disabled:opacity-60",
+    "inline-flex min-h-11 items-center justify-center rounded-xl transition duration-150 active:scale-[0.97] bg-brand px-4 text-[15px] font-semibold text-brand-ink disabled:opacity-60",
+  soft: "inline-flex min-h-11 items-center justify-center rounded-xl transition duration-150 active:scale-[0.97] bg-brand-soft px-4 text-[15px] font-semibold text-brand disabled:opacity-60",
+  ok: "inline-flex min-h-11 items-center justify-center rounded-xl transition duration-150 active:scale-[0.97] bg-ok px-4 text-[15px] font-semibold text-white disabled:opacity-60",
   outline:
-    "inline-flex min-h-11 items-center justify-center rounded-xl border border-field bg-surface px-4 text-[15px] font-semibold text-ink disabled:opacity-60",
+    "inline-flex min-h-11 items-center justify-center rounded-xl transition duration-150 active:scale-[0.97] border border-field bg-surface px-4 text-[15px] font-semibold text-ink disabled:opacity-60",
   danger:
-    "inline-flex min-h-11 items-center justify-center rounded-xl bg-warn-soft px-4 text-[15px] font-semibold text-danger disabled:opacity-60",
+    "inline-flex min-h-11 items-center justify-center rounded-xl transition duration-150 active:scale-[0.97] bg-warn-soft px-4 text-[15px] font-semibold text-danger disabled:opacity-60",
 };
 
 export function Field({

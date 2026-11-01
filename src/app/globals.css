@@ -67,3 +67,56 @@ button {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
+
+/* ---- Motion ---------------------------------------------------------- */
+/* Each page's blocks rise in one after another when the page opens. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.page-enter > * {
+  animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.page-enter > :nth-child(2) { animation-delay: 0.04s; }
+.page-enter > :nth-child(3) { animation-delay: 0.08s; }
+.page-enter > :nth-child(4) { animation-delay: 0.12s; }
+.page-enter > :nth-child(5) { animation-delay: 0.16s; }
+.page-enter > :nth-child(n + 6) { animation-delay: 0.2s; }
+
+/* Placeholder blocks shown while a page is loading. */
+@keyframes pulse-soft {
+  50% {
+    opacity: 0.55;
+  }
+}
+.skeleton {
+  border-radius: 1rem;
+  background: var(--line);
+  animation: pulse-soft 1.2s ease-in-out infinite;
+}
+
+/* Bill details open smoothly. */
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details[open] > :not(summary) {
+  animation: rise 0.25s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter > *,
+  details[open] > :not(summary),
+  .skeleton {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}

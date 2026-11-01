@@ -96,11 +96,11 @@ export function BottomNav({ isAdmin }: { isAdmin: boolean }) {
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex h-[68px] flex-col items-center justify-center gap-1 text-xs ${
+                className={`flex h-[68px] flex-col items-center justify-center gap-1 text-xs transition-colors duration-200 active:scale-95 ${
                   active ? "font-bold text-brand" : "text-muted"
                 }`}
               >
-                {item.icon}
+                <span className={`transition-transform duration-200 ${active ? "-translate-y-0.5 scale-110" : ""}`}>{item.icon}</span>
                 {item.label}
               </Link>
             </li>
