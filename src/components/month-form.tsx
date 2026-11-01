@@ -26,9 +26,6 @@ const money = (n: number | null) => (n == null ? "" : formatMoneyInput(String(Ma
 
 type RoomDraft = {
   roomId: string;
-  name: string;
-  rent: string;
-  people: string;
   readings: { meterId: string; label: string; oldValue: string; newValue: string }[];
 };
 
@@ -40,9 +37,6 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
   const [rooms, setRooms] = useState<RoomDraft[]>(
     initial.rooms.map((r) => ({
       roomId: r.roomId,
-      name: r.name,
-      rent: money(r.rent),
-      people: String(r.people),
       readings: r.readings.map((x) => ({
         meterId: x.meterId,
         label: x.label,
@@ -62,9 +56,6 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
       electricityAmount: num(amount),
       rooms: rooms.map((r) => ({
         roomId: r.roomId,
-        name: r.name.trim(),
-        rent: num(r.rent) ?? 0,
-        people: Number(r.people) || 0,
         readings: r.readings.map((x) => ({
           meterId: x.meterId,
           oldValue: dec(x.oldValue),
@@ -81,23 +72,19 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
       calculateBills({
         mainKwh: payload.mainKwh ?? 0,
         electricityAmount: payload.electricityAmount ?? 0,
-        rooms: payload.rooms.map((r) => ({
-          roomId: r.roomId,
-          rent: r.rent,
-          people: r.people,
-          readings: r.readings,
-        })),
+        rooms: payload.rooms.map((r) => {
+          const m = initial.rooms.find((x) => x.roomId === r.roomId)!;
+          return { roomId: r.roomId, rent: m.rent, people: m.people, readings: r.readings };
+        }),
         expenses: payload.expenses
           .filter((e) => (e.amount ?? 0) > 0)
           .map((e) => ({ kind: e.kind, name: e.name, amount: e.amount ?? 0 })),
       }),
-    [payload],
+    [payload, initial.rooms],
   );
   const billOf = new Map(summary.rooms.map((b) => [b.roomId, b]));
   const meta = new Map(initial.rooms.map((r) => [r.roomId, r]));
 
-  const patchRoom = (id: string, patch: Partial<RoomDraft>) =>
-    setRooms((rs) => rs.map((r) => (r.roomId === id ? { ...r, ...patch } : r)));
   const patchReading = (id: string, meterId: string, patch: Partial<RoomDraft["readings"][number]>) =>
     setRooms((rs) =>
       rs.map((r) =>
@@ -116,7 +103,9 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
 
       {locked ? (
         <Notice tone="brand">Tháng này đã chốt. Bấm “Mở lại để sửa” nếu cần chỉnh số liệu.</Notice>
-      ) : null}
+      ) : (
+        <p className="text-xs text-muted">Tên phòng, tiền phòng và số người sửa ở tab Phòng.</p>
+      )}
 
       <Card>
         <SectionLabel>Điện toàn nhà</SectionLabel>
@@ -145,40 +134,15 @@ export function MonthForm({ initial }: { initial: MonthFormState }) {
           <Card key={r.roomId}>
             <div className="mb-3 flex items-center gap-3">
               <RoomChip code={m.code} color={m.color} />
-              <p className="flex-1 font-bold">{r.name.trim() || m.name}</p>
+              <span className="flex-1">
+                <span className="block font-bold">{m.name}</span>
+                <span className="block text-xs text-muted tabular-nums">
+                  Tiền phòng {vnd(m.rent)} đ · {m.people} người
+                </span>
+              </span>
               <p className="text-right text-sm font-bold tabular-nums">{vnd(bill?.total ?? 0)} đ</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <label className="col-span-2 flex flex-col gap-1 text-[13px] text-ink/80">
-                Tên phòng tháng này
-                <input
-                  value={r.name}
-                  maxLength={60}
-                  disabled={locked}
-                  placeholder={m.name}
-                  onChange={(e) => patchRoom(r.roomId, { name: e.target.value })}
-                  className={inputClass}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-[13px] text-ink/80">
-                Tiền phòng
-                <MoneyInput
-                  value={r.rent}
-                  disabled={locked}
-                  onValueChange={(v) => patchRoom(r.roomId, { rent: v })}
-                  className={field}
-                />
-              </label>
-              <label className="flex flex-col gap-1 text-[13px] text-ink/80">
-                Số người
-                <input
-                  inputMode="numeric"
-                  value={r.people}
-                  disabled={locked}
-                  onChange={(e) => patchRoom(r.roomId, { people: e.target.value })}
-                  className={field}
-                />
-              </label>
               {r.readings.map((x) => (
                 <div key={x.meterId} className="col-span-2 grid grid-cols-2 gap-3">
                   <label className="flex flex-col gap-1 text-[13px] text-ink/80">

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { FormState } from "@/app/actions/auth";
 import { calculateBills, type ExpenseKind } from "@/lib/billing";
-import { requireAdmin } from "@/lib/data";
+import { getRooms, requireAdmin } from "@/lib/data";
 import { normalizeMonth } from "@/lib/month-view";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,9 +14,6 @@ type Payload = {
   electricityAmount: number | null;
   rooms: {
     roomId: string;
-    name?: string;
-    rent: number;
-    people: number;
     readings: { meterId: string; oldValue: number | null; newValue: number | null }[];
   }[];
   expenses: { kind: ExpenseKind; name: string; amount: number | null }[];
@@ -62,12 +59,35 @@ export async function saveMonth(_prev: FormState, formData: FormData): Promise<F
     .maybeSingle();
   if (existing?.status === "closed") return { error: "Tháng này đã chốt. Bấm “Mở lại để sửa” trước." };
 
+  // Name, rent and head count are set in the Rooms tab only. The newest month copies
+  // them; an older month that was reopened keeps its own.
+  const { data: later } = await supabase.from("periods").select("id").gt("month", month).limit(1);
+  const follows = (later ?? []).length === 0;
+  const roomById = new Map((await getRooms()).map((r) => [r.id, r]));
+  const savedById = new Map<string, { room_name: string | null; rent: number; people: number }>();
+  if (!follows && existing) {
+    const { data: saved } = await supabase
+      .from("period_rooms")
+      .select("room_id, room_name, rent, people")
+      .eq("period_id", existing.id);
+    for (const r of saved ?? []) savedById.set(r.room_id, r);
+  }
+  const rooms = p.rooms
+    .filter((r) => roomById.has(r.roomId))
+    .map((r) => {
+      const room = roomById.get(r.roomId)!;
+      const kept = savedById.get(r.roomId);
+      return kept
+        ? { ...r, name: kept.room_name || room.name, rent: kept.rent, people: kept.people }
+        : { ...r, name: room.name, rent: room.default_rent, people: room.default_people };
+    });
+
   const close = intent === "close";
   if (close) {
     const summary = calculateBills({
       mainKwh: p.mainKwh ?? 0,
       electricityAmount: p.electricityAmount ?? 0,
-      rooms: p.rooms.map((r) => ({
+      rooms: rooms.map((r) => ({
         roomId: r.roomId,
         rent: r.rent,
         people: r.people,
@@ -95,14 +115,14 @@ export async function saveMonth(_prev: FormState, formData: FormData): Promise<F
     .single();
   if (periodError || !period) return { error: "Không lưu được tháng" };
 
-  const roomRows = p.rooms.map((r) => ({
+  const roomRows = rooms.map((r) => ({
     period_id: period.id,
     room_id: r.roomId,
-    room_name: typeof r.name === "string" && r.name.trim() ? r.name.trim().slice(0, 60) : null,
+    room_name: r.name,
     rent: Math.max(0, Math.round(r.rent || 0)),
     people: Math.max(0, Math.round(r.people || 0)),
   }));
-  const readingRows = p.rooms.flatMap((r) =>
+  const readingRows = rooms.flatMap((r) =>
     r.readings.map((x) => ({
       period_id: period.id,
       meter_id: x.meterId,

@@ -1,9 +1,9 @@
-import { moveMember, removeMember, updateRoom } from "@/app/actions/rooms";
+import { moveMember, removeMember } from "@/app/actions/rooms";
 import { AddMemberForm } from "@/components/add-member-form";
-import { MoneyField } from "@/components/money-input";
+import { RoomSettingsForm } from "@/components/room-settings-form";
 import { ResetPasswordButton } from "@/components/reset-password-button";
 import { SubmitButton } from "@/components/submit-button";
-import { Badge, Card, PageTitle, RoomChip, SectionLabel, buttonClass, inputClass } from "@/components/ui";
+import { Badge, Card, PageTitle, SectionLabel, buttonClass, inputClass } from "@/components/ui";
 import { getRooms } from "@/lib/data";
 import { todayVN } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
@@ -21,33 +21,13 @@ export default async function AdminRoomsPage() {
 
   return (
     <>
-      <PageTitle title="Phòng & thành viên" subtitle="Giá phòng mặc định, người ở" />
+      <PageTitle title="Phòng & thành viên" subtitle="Tên phòng, tiền phòng, số người · tháng nháp tự cập nhật theo" />
 
       {rooms.map((room) => {
         const members = current.filter((m) => m.room_id === room.id);
         return (
           <Card key={room.id}>
-            <div className="mb-3 flex items-center gap-3">
-              <RoomChip code={room.code} color={room.color} />
-              <p className="flex-1 font-bold">{room.name}</p>
-              <span className="text-xs text-muted">{members.length} người</span>
-            </div>
-
-            <form action={updateRoom} className="mb-3 grid grid-cols-[1fr_auto] items-end gap-2">
-              <input type="hidden" name="roomId" value={room.id} />
-              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-[13px] text-ink/80">
-                Tên phòng
-                <input name="name" defaultValue={room.name} maxLength={60} required className={inputClass} />
-              </label>
-              <label className="flex min-w-0 flex-col gap-1 text-[13px] text-ink/80">
-                Giá phòng mặc định
-                <MoneyField name="rent" defaultValue={room.default_rent} className={`${inputClass} tabular-nums`} />
-              </label>
-              <SubmitButton className={buttonClass.soft}>Lưu</SubmitButton>
-            </form>
-            <p className="-mt-1 mb-3 text-xs text-muted">
-              Đổi tên áp dụng cho tháng đang nháp và các tháng sau. Tháng đã chốt giữ tên cũ.
-            </p>
+            <RoomSettingsForm key={`${room.name}|${room.default_rent}|${room.default_people}`} room={room} accounts={members.length} />
 
             <ul className="flex flex-col divide-y divide-line">
               {members.map((m) => {

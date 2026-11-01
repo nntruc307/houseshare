@@ -7,7 +7,6 @@ import {
   type Room,
 } from "./data";
 import { normalizeMonth } from "./month-view";
-import { createClient } from "./supabase/server";
 import { todayVN } from "./format";
 import type { ExpenseKind } from "./billing";
 
@@ -60,24 +59,11 @@ export async function loadMonthForm(requested?: string | string[]): Promise<{
   const prevPeriod = periods.find((p) => p.month < month);
   const prev = prevPeriod ? await getPeriodBundle(prevPeriod.month) : null;
 
-  const activeCounts = await currentPeople();
-  const state = buildState(month, rooms, existing, prev, activeCounts);
+  // Only the newest month follows the Rooms tab. An older month that is reopened
+  // keeps the names, rents and head counts it was closed with.
+  const follows = !existing || (existing.period.status === "draft" && !periods.some((p) => p.month > month));
+  const state = buildState(month, rooms, existing, prev, follows);
   return { state, months: periods.map((p) => ({ month: p.month, status: p.status })) };
-}
-
-async function currentPeople(): Promise<Map<string, number>> {
-  const supabase = await createClient();
-  const today = todayVN();
-  const { data } = await supabase
-    .from("room_memberships")
-    .select("room_id, end_date, profiles!inner(active)")
-    .lte("start_date", today);
-  const counts = new Map<string, number>();
-  for (const row of data ?? []) {
-    if (row.end_date && row.end_date < today) continue;
-    counts.set(row.room_id, (counts.get(row.room_id) ?? 0) + 1);
-  }
-  return counts;
 }
 
 function buildState(
@@ -85,22 +71,21 @@ function buildState(
   rooms: Room[],
   existing: PeriodBundle | null,
   prev: PeriodBundle | null,
-  counts: Map<string, number>,
+  follows: boolean,
 ): MonthFormState {
   const readingOf = (b: PeriodBundle | null, meterId: string) =>
     b?.readings.find((r) => r.meter_id === meterId);
 
   const roomStates = rooms
     .map((room) => {
-      const saved = existing?.rooms.find((r) => r.room_id === room.id);
-      const before = prev?.rooms.find((r) => r.room_id === room.id);
+      const frozen = follows ? undefined : existing?.rooms.find((r) => r.room_id === room.id);
       return {
         roomId: room.id,
         code: room.code,
-        name: saved?.room_name?.trim() || room.name,
+        name: frozen?.room_name?.trim() || room.name,
         color: room.color,
-        rent: saved?.rent ?? room.default_rent,
-        people: saved?.people ?? counts.get(room.id) ?? before?.people ?? 1,
+        rent: frozen?.rent ?? room.default_rent,
+        people: frozen?.people ?? room.default_people,
         readings: room.meters
           .filter((m) => m.active)
           .map((m) => {

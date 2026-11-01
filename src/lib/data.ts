@@ -25,6 +25,7 @@ export type Room = {
   name: string;
   color: string;
   default_rent: number;
+  default_people: number; // set by hand; not everyone living here has an account
   sort: number;
   meters: { id: string; label: string; sort: number; active: boolean }[];
 };
@@ -123,7 +124,7 @@ export const getRooms = cache(async (): Promise<Room[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("rooms")
-    .select("id, code, name, color, default_rent, sort, meters(id, label, sort, active)")
+    .select("id, code, name, color, default_rent, default_people, sort, meters(id, label, sort, active)")
     .order("sort");
   if (error) throw error;
   return (data ?? []).map((r) => ({

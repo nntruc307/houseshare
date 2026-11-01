@@ -17,25 +17,40 @@ function admin() {
   }
 }
 
-/** Current name and default rent of a room. A new name also applies to months still in draft; closed months keep theirs. */
+/**
+ * Name, rent and head count of a room. They are only edited here: months still in
+ * draft follow them right away, closed months keep what they were closed with.
+ */
 export async function updateRoom(formData: FormData) {
   await requireAdmin();
   const roomId = String(formData.get("roomId") ?? "");
-  const rent = Number(String(formData.get("rent") ?? "").replace(/[^\d]/g, ""));
+  const rentRaw = String(formData.get("rent") ?? "").replace(/[^\d]/g, "");
+  const peopleRaw = String(formData.get("people") ?? "").replace(/[^\d]/g, "");
   const name = String(formData.get("name") ?? "").trim().slice(0, 60);
-  if (!roomId || !Number.isFinite(rent)) return;
+  if (!roomId || rentRaw === "" || peopleRaw === "" || !name) return;
+  const rent = Number(rentRaw);
+  const people = Math.min(Number(peopleRaw), 50);
+
   const supabase = await createClient();
-  const { data: before } = await supabase.from("rooms").select("name").eq("id", roomId).single();
-  await supabase
+  const { error } = await supabase
     .from("rooms")
-    .update(name ? { default_rent: rent, name } : { default_rent: rent })
+    .update({ name, default_rent: rent, default_people: people })
     .eq("id", roomId);
-  if (name && before && before.name !== name) {
-    const { data: drafts } = await supabase.from("periods").select("id").eq("status", "draft");
-    const ids = (drafts ?? []).map((d) => d.id);
-    if (ids.length > 0) {
-      await supabase.from("period_rooms").update({ room_name: name }).eq("room_id", roomId).in("period_id", ids);
-    }
+  if (error) return;
+
+  // Only the newest month, and only while it is a draft, follows these values.
+  const { data: newest } = await supabase
+    .from("periods")
+    .select("id, status")
+    .order("month", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (newest?.status === "draft") {
+    await supabase
+      .from("period_rooms")
+      .update({ room_name: name, rent, people })
+      .eq("room_id", roomId)
+      .eq("period_id", newest.id);
   }
   revalidatePath("/", "layout");
 }
