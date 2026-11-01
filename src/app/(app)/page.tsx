@@ -34,10 +34,15 @@ export default async function HomePage() {
               <p className="text-xs text-muted">{monthLabel(view.month)}</p>
               <p className="text-2xl font-bold tabular-nums">{vnd(bill.total)} đ</p>
             </div>
-            <PaidBadge paid={periodRoom.paid} />
+            <PaidBadge paid={periodRoom.paid} draft={view.draft} />
           </div>
           <BillLines bill={bill} periodRoom={periodRoom} />
-          {!periodRoom.paid && settings && settings.bank_code && settings.bank_account ? (
+          {view.draft ? (
+            <p className="mt-3 rounded-xl bg-hl px-3 py-2 text-sm font-medium">
+              Tháng này chưa chốt, số tiền có thể còn thay đổi. Mã QR thanh toán sẽ hiện sau khi chốt.
+            </p>
+          ) : null}
+          {!view.draft && !periodRoom.paid && settings && settings.bank_code && settings.bank_account ? (
             <div className="mt-4 flex flex-col items-center gap-2 border-t border-line pt-4">
               <p className="text-sm font-semibold">Quét mã để chuyển khoản</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}

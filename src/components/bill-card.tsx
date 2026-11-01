@@ -27,7 +27,8 @@ export function BillLines({ bill, periodRoom }: { bill: RoomBill; periodRoom: Pe
   );
 }
 
-export function PaidBadge({ paid }: { paid: boolean }) {
+export function PaidBadge({ paid, draft = false }: { paid: boolean; draft?: boolean }) {
+  if (draft) return <Badge tone="hl">Bản nháp</Badge>;
   return paid ? <Badge tone="ok">Đã thanh toán</Badge> : <Badge tone="warn">Chưa thanh toán</Badge>;
 }
 

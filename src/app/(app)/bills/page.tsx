@@ -2,7 +2,7 @@ import Link from "next/link";
 import { setPaid } from "@/app/actions/bills";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { SubmitButton } from "@/components/submit-button";
-import { Card, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
+import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getMe } from "@/lib/data";
 import { monthLabel, vnd } from "@/lib/format";
 import { loadMonthView } from "@/lib/month-view";
@@ -32,7 +32,7 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
 
   return (
     <>
-      <PageTitle title={monthLabel(view.month)} subtitle="Hóa đơn cả nhà" />
+      <PageTitle title={monthLabel(view.month)} subtitle={view.draft ? "Hóa đơn cả nhà · bản nháp, chưa chốt" : "Hóa đơn cả nhà"} />
 
       <nav className="flex gap-2" aria-label="Chọn tháng">
         {view.prev ? (
@@ -51,7 +51,11 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
         )}
       </nav>
 
-      <div className="grid grid-cols-2 gap-3">
+      {view.draft ? (
+        <Notice tone="brand">Tháng này chưa chốt nên số tiền chỉ là tạm tính và chưa thu tiền.</Notice>
+      ) : null}
+
+      <div className={view.draft ? "hidden" : "grid grid-cols-2 gap-3"}>
         <Card>
           <p className="text-xs text-muted">Đã thanh toán</p>
           <p className="text-xl font-bold">
@@ -82,12 +86,12 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
                 </span>
                 <span className="flex flex-col items-end gap-1">
                   <span className="font-bold tabular-nums">{vnd(bill.total)} đ</span>
-                  <PaidBadge paid={pr.paid} />
+                  <PaidBadge paid={pr.paid} draft={view.draft} />
                 </span>
               </summary>
               <div className="border-t border-line px-4 pt-1 pb-4">
                 <BillLines bill={bill} periodRoom={pr} />
-                {me.isAdmin ? (
+                {me.isAdmin && !view.draft ? (
                   <form action={setPaid} className="mt-3">
                     <input type="hidden" name="periodId" value={bundle.period.id} />
                     <input type="hidden" name="roomId" value={room.id} />

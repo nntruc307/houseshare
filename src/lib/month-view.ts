@@ -13,8 +13,9 @@ import { vnd } from "./format";
 import type { LINE_COLORS } from "./palette";
 
 export type MonthView = {
-  months: string[]; // closed months, newest first
+  months: string[]; // every visible month (drafts included), newest first
   month: string;
+  draft: boolean; // not closed yet: figures are provisional
   prev: string | null;
   next: string | null;
   bundle: PeriodBundle;
@@ -34,10 +35,13 @@ export function normalizeMonth(input: string | string[] | undefined): string | n
 /** The month to show (requested or newest closed month) with every number computed. */
 export async function loadMonthView(requested?: string | string[]): Promise<MonthView | null> {
   const periods = await listPeriods();
-  const months = periods.filter((p) => p.status === "closed").map((p) => p.month);
+  const months = periods.map((p) => p.month);
   if (months.length === 0) return null;
   const wanted = normalizeMonth(requested);
-  const month = wanted && months.includes(wanted) ? wanted : months[0];
+  // Default: the oldest month that is still a draft (so a new month only shows
+  // once the previous one is closed), otherwise the newest closed month.
+  const oldestDraft = periods.filter((p) => p.status === "draft").at(-1)?.month;
+  const month = wanted && months.includes(wanted) ? wanted : (oldestDraft ?? months[0]);
 
   const [bundle, allRooms] = await Promise.all([getPeriodBundle(month), getRooms()]);
   if (!bundle) return null;
@@ -49,6 +53,7 @@ export async function loadMonthView(requested?: string | string[]): Promise<Mont
   return {
     months,
     month,
+    draft: bundle.period.status === "draft",
     prev: months[i + 1] ?? null,
     next: months[i - 1] ?? null,
     bundle,
