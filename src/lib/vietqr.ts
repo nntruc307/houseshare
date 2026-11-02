@@ -1,19 +1,19 @@
 /**
  * Image URL of a VietQR code that opens in any Vietnamese banking app with the
- * receiving account, amount and message already filled in (img.vietqr.io).
+ * receiving account and message already filled in (img.vietqr.io). The amount
+ * is left out on purpose: rooms may transfer more than the bill, for example
+ * when they also use the washing machine.
  */
 export function vietQrUrl(opts: {
   bankCode: string;
   account: string;
   accountName: string;
-  amount: number;
   memo: string;
 }): string {
   const base = `https://img.vietqr.io/image/${encodeURIComponent(opts.bankCode)}-${encodeURIComponent(
     opts.account,
   )}-compact2.png`;
   const params = new URLSearchParams({
-    amount: String(Math.round(opts.amount)),
     addInfo: opts.memo,
     accountName: opts.accountName,
   });

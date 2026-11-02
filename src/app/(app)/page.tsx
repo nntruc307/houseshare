@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { CleaningPlan } from "@/components/cleaning-plan";
+import { CopyButton } from "@/components/copy-button";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningSlots, getMe, getRooms, getSettings } from "@/lib/data";
 import { monthLabel, vnd } from "@/lib/format";
@@ -51,19 +52,35 @@ export default async function HomePage() {
                   bankCode: settings.bank_code,
                   account: settings.bank_account,
                   accountName: settings.bank_account_name,
-                  amount: bill.total,
                   memo: transferMemo(myRoom.code, view.month),
                 })}
-                alt={`Mã QR chuyển ${vnd(bill.total)} đồng, nội dung ${transferMemo(myRoom.code, view.month)}`}
+                alt={`Mã QR chuyển khoản, nội dung ${transferMemo(myRoom.code, view.month)}, tự nhập số tiền`}
                 width={240}
                 height={240}
                 className="h-auto w-60 rounded-xl border border-line"
               />
-              <p className="text-center text-xs text-muted">
-                {settings.bank_account_name} · {settings.bank_account}
-                <br />
-                Nội dung: {transferMemo(myRoom.code, view.month)}
-              </p>
+              <p className="text-center text-xs text-muted">Tự nhập số tiền khi chuyển khoản.</p>
+              <dl className="w-full space-y-2 text-sm">
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted">Ngân hàng</dt>
+                  <dd className="text-right font-medium">{settings.bank_code}</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted">Chủ tài khoản</dt>
+                  <dd className="text-right font-medium">{settings.bank_account_name}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-muted">Số tài khoản</dt>
+                  <dd className="flex items-center gap-2">
+                    <span className="font-medium tabular-nums">{settings.bank_account}</span>
+                    <CopyButton value={settings.bank_account} label="Sao chép số tài khoản" />
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt className="text-muted">Nội dung</dt>
+                  <dd className="text-right font-medium">{transferMemo(myRoom.code, view.month)}</dd>
+                </div>
+              </dl>
             </div>
           ) : null}
         </Card>
