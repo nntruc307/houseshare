@@ -71,7 +71,7 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
                 </span>
                 <span className="flex flex-col items-end gap-1">
                   <span className="font-bold tabular-nums">{vnd(bill.total)} đ</span>
-                  <PaidBadge paid={pr.paid} draft={view.draft} />
+                  <PaidBadge paid={pr.paid} draft={view.draft} reported={Boolean(pr.payment_reported_at)} />
                 </span>
               </summary>
               <div className="border-t border-line px-4 pt-1 pb-4">
@@ -82,8 +82,20 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
                     <input type="hidden" name="roomId" value={room.id} />
                     <input type="hidden" name="paid" value={pr.paid ? "false" : "true"} />
                     <SubmitButton className={`${pr.paid ? buttonClass.outline : buttonClass.ok} w-full`}>
-                      {pr.paid ? "Bỏ đánh dấu đã thanh toán" : "Đánh dấu đã thanh toán"}
+                      {pr.paid
+                        ? "Bỏ đánh dấu đã thanh toán"
+                        : pr.payment_reported_at
+                          ? "Xác nhận đã nhận tiền"
+                          : "Đánh dấu đã thanh toán"}
                     </SubmitButton>
+                  </form>
+                ) : null}
+                {me.isAdmin && !view.draft && !pr.paid && pr.payment_reported_at ? (
+                  <form action={setPaid} className="mt-2">
+                    <input type="hidden" name="periodId" value={bundle.period.id} />
+                    <input type="hidden" name="roomId" value={room.id} />
+                    <input type="hidden" name="paid" value="false" />
+                    <SubmitButton className={`${buttonClass.outline} w-full`}>Chưa nhận được tiền</SubmitButton>
                   </form>
                 ) : null}
               </div>

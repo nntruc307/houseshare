@@ -49,6 +49,7 @@ export type PeriodRoom = {
   adjustment_note: string | null;
   paid: boolean;
   paid_at: string | null;
+  payment_reported_at: string | null; // room says it paid, waiting for an admin
 };
 
 export type Reading = {

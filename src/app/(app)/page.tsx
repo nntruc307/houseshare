@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { cancelPaymentReport } from "@/app/actions/bills";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { CleaningPlan } from "@/components/cleaning-plan";
 import { CopyButton } from "@/components/copy-button";
+import { PaymentConfirm } from "@/components/payment-confirm";
+import { SubmitButton } from "@/components/submit-button";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningSlots, getMe, getRooms, getSettings } from "@/lib/data";
 import { monthLabel, vnd } from "@/lib/format";
@@ -35,7 +38,7 @@ export default async function HomePage() {
               <p className="text-xs text-muted">{monthLabel(view.month)}</p>
               <p className="text-2xl font-bold tabular-nums">{vnd(bill.total)} đ</p>
             </div>
-            <PaidBadge paid={periodRoom.paid} draft={view.draft} />
+            <PaidBadge paid={periodRoom.paid} draft={view.draft} reported={Boolean(periodRoom.payment_reported_at)} />
           </div>
           <BillLines bill={bill} periodRoom={periodRoom} />
           {view.draft ? (
@@ -81,6 +84,21 @@ export default async function HomePage() {
                   <dd className="text-right font-medium">{transferMemo(myRoom.code, view.month)}</dd>
                 </div>
               </dl>
+            </div>
+          ) : null}
+          {!view.draft && !periodRoom.paid ? (
+            <div className="mt-4">
+              {periodRoom.payment_reported_at ? (
+                <form action={cancelPaymentReport} className="flex flex-col gap-2">
+                  <input type="hidden" name="periodId" value={view.bundle.period.id} />
+                  <p className="rounded-xl bg-hl px-3 py-2 text-sm font-medium">
+                    Bạn đã báo thanh toán, đang chờ Trực hoặc Vi xác nhận.
+                  </p>
+                  <SubmitButton className={`${buttonClass.outline} w-full`}>Hủy báo thanh toán</SubmitButton>
+                </form>
+              ) : (
+                <PaymentConfirm periodId={view.bundle.period.id} />
+              )}
             </div>
           ) : null}
         </Card>
