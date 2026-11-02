@@ -49,8 +49,6 @@ export default async function HomePage() {
           ) : null}
           {!view.draft && !periodRoom.paid && settings && settings.bank_code && settings.bank_account ? (
             <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-line pt-2">
-              <p className="text-sm font-semibold">Quét mã để chuyển khoản</p>
-              <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={vietQrUrl({
@@ -62,15 +60,12 @@ export default async function HomePage() {
                 alt={`Mã QR chuyển khoản, nội dung ${transferMemo(myRoom.code, view.month)}, tự nhập số tiền`}
                 width={240}
                 height={240}
-                className="h-auto w-44 rounded-xl border border-line"
+                className="h-auto w-60 rounded-xl border border-line"
               />
-              <div className="absolute top-0 left-full ml-2">
-                <SaveQrButton
-                  src={`/qr-image?month=${view.month.slice(0, 7)}`}
-                  fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
-                />
-              </div>
-              </div>
+              <SaveQrButton
+                src={`/qr-image?month=${view.month.slice(0, 7)}`}
+                fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
+              />
               <dl className="w-full space-y-0.5 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Ngân hàng</dt>
@@ -103,6 +98,11 @@ export default async function HomePage() {
               <SubmitButton className={`${buttonClass.outline} w-full`}>Hủy báo thanh toán</SubmitButton>
             </form>
           ) : null}
+          {!view.draft && !periodRoom.paid && !periodRoom.payment_reported_at ? (
+            <div className="mt-3">
+              <PaymentConfirm periodId={view.bundle.period.id} />
+            </div>
+          ) : null}
         </Card>
       ) : !view ? (
         <Card>
@@ -123,10 +123,6 @@ export default async function HomePage() {
           <p className="text-sm text-muted">Chưa có lịch dọn.</p>
         )}
       </Card>
-
-      {view && periodRoom && !view.draft && !periodRoom.paid && !periodRoom.payment_reported_at ? (
-        <PaymentConfirm periodId={view.bundle.period.id} />
-      ) : null}
 
       {view ? (
         <Link href="/bills" className={`${buttonClass.soft} w-full`}>

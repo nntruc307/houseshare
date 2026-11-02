@@ -18,7 +18,7 @@ export function BillLines({
   return (
     <ul className="flex flex-col divide-y divide-line">
       {lines.map((line) => (
-        <li key={line.key} className={`flex items-center gap-2.5 ${compact ? "py-1 text-sm" : "py-2.5 text-[15px]"}`}>
+        <li key={line.key} className={`flex items-center gap-2.5 text-[15px] ${compact ? "py-1" : "py-2.5"}`}>
           <Dot kind={line.dot} />
           <span className="flex-1">
             {line.label}
@@ -27,9 +27,9 @@ export function BillLines({
           <span className="font-semibold tabular-nums">{line.value}</span>
         </li>
       ))}
-      <li className={`flex items-center justify-between font-bold ${compact ? "pt-1.5 text-sm" : "pt-3 text-base"}`}>
+      <li className={`flex items-center justify-between text-base font-bold ${compact ? "pt-1.5" : "pt-3"}`}>
         <span>Tổng cộng</span>
-        <span className={`tabular-nums ${compact ? "text-base" : "text-lg"}`}>{vnd(bill.total)} đ</span>
+        <span className="text-lg tabular-nums">{vnd(bill.total)} đ</span>
       </li>
     </ul>
   );
