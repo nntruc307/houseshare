@@ -4,6 +4,7 @@ import { BillLines, PaidBadge } from "@/components/bill-card";
 import { CleaningPlan } from "@/components/cleaning-plan";
 import { CopyButton } from "@/components/copy-button";
 import { PaymentConfirm } from "@/components/payment-confirm";
+import { SaveQrButton } from "@/components/save-qr-button";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningSlots, getMe, getRooms, getSettings } from "@/lib/data";
@@ -63,6 +64,10 @@ export default async function HomePage() {
                 className="h-auto w-60 rounded-xl border border-line"
               />
               <p className="text-center text-xs text-muted">Tự nhập số tiền khi chuyển khoản.</p>
+              <SaveQrButton
+                src={`/qr-image?month=${view.month.slice(0, 7)}`}
+                fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
+              />
               <dl className="w-full space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Ngân hàng</dt>
