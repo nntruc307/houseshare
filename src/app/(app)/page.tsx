@@ -63,7 +63,6 @@ export default async function HomePage() {
                 height={240}
                 className="h-auto w-60 rounded-xl border border-line"
               />
-              <p className="text-center text-xs text-muted">Tự nhập số tiền khi chuyển khoản.</p>
               <SaveQrButton
                 src={`/qr-image?month=${view.month.slice(0, 7)}`}
                 fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
