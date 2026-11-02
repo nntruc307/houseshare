@@ -163,14 +163,27 @@ export async function getPeriodBundle(month: string): Promise<PeriodBundle | nul
     .eq("month", month)
     .maybeSingle();
   if (!period) return null;
-  const [rooms, readings, expenses] = await Promise.all([
+  const [rooms, payments, readings, expenses] = await Promise.all([
     supabase.from("period_rooms").select("*").eq("period_id", period.id),
+    // RLS returns only the viewer's own room unless they are an admin.
+    supabase
+      .from("period_room_payments")
+      .select("room_id, paid, paid_at, payment_reported_at")
+      .eq("period_id", period.id),
     supabase.from("meter_readings").select("*").eq("period_id", period.id),
     supabase.from("period_expenses").select("*").eq("period_id", period.id).order("sort"),
   ]);
   return {
     period: { ...period, main_kwh: Number(period.main_kwh) } as Period,
-    rooms: (rooms.data ?? []) as PeriodRoom[],
+    rooms: (rooms.data ?? []).map((r) => {
+      const payment = payments.data?.find((x) => x.room_id === r.room_id);
+      return {
+        ...r,
+        paid: payment?.paid ?? false,
+        paid_at: payment?.paid_at ?? null,
+        payment_reported_at: payment?.payment_reported_at ?? null,
+      };
+    }) as PeriodRoom[],
     readings: (readings.data ?? []).map((r) => ({
       ...r,
       old_value: r.old_value == null ? null : Number(r.old_value),

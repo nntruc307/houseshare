@@ -13,18 +13,23 @@ export async function setPaid(formData: FormData) {
   const paid = formData.get("paid") === "true";
   if (!periodId || !roomId) return;
   const supabase = await createClient();
-  await supabase
-    .from("period_rooms")
-    .update({ paid, paid_at: paid ? new Date().toISOString() : null, payment_reported_at: null })
-    .eq("period_id", periodId)
-    .eq("room_id", roomId);
+  await supabase.from("period_room_payments").upsert(
+    {
+      period_id: periodId,
+      room_id: roomId,
+      paid,
+      paid_at: paid ? new Date().toISOString() : null,
+      payment_reported_at: null,
+    },
+    { onConflict: "period_id,room_id" },
+  );
   revalidatePath("/", "layout");
 }
 
 /**
  * The signed-in person says their own room has paid. Admins confirm their own
  * room directly; a member's report waits for an admin. Members have no write
- * access to period_rooms, so this runs with the server key after these checks.
+ * access to period_room_payments, so this runs with the server key after these checks.
  */
 export async function submitPayment(_prev: FormState, formData: FormData): Promise<FormState> {
   const me = await getMe();
@@ -38,12 +43,17 @@ export async function submitPayment(_prev: FormState, formData: FormData): Promi
   const now = new Date().toISOString();
   const update = me.isAdmin ? { paid: true, paid_at: now, payment_reported_at: null } : { payment_reported_at: now };
   try {
-    const { error } = await createAdminClient()
-      .from("period_rooms")
-      .update(update)
+    const admin = createAdminClient();
+    const { data: current } = await admin
+      .from("period_room_payments")
+      .select("paid")
       .eq("period_id", periodId)
       .eq("room_id", me.roomId)
-      .eq("paid", false);
+      .maybeSingle();
+    if (current?.paid) return {};
+    const { error } = await admin
+      .from("period_room_payments")
+      .upsert({ period_id: periodId, room_id: me.roomId, ...update }, { onConflict: "period_id,room_id" });
     if (error) return { error: "Chưa lưu được, bạn thử lại nhé" };
   } catch {
     return { error: "Chưa lưu được, bạn thử lại nhé" };
@@ -58,7 +68,7 @@ export async function cancelPaymentReport(formData: FormData) {
   const periodId = String(formData.get("periodId") ?? "");
   if (!periodId || !me.roomId) return;
   await createAdminClient()
-    .from("period_rooms")
+    .from("period_room_payments")
     .update({ payment_reported_at: null })
     .eq("period_id", periodId)
     .eq("room_id", me.roomId)
