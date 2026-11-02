@@ -31,12 +31,12 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
         type="button"
         onClick={copy}
         aria-label={label}
-        className="inline-flex size-9 items-center justify-center rounded-lg border border-field bg-surface text-ink transition duration-150 active:scale-[0.94]"
+        className="inline-flex size-7 items-center justify-center rounded-lg border border-field bg-surface text-ink transition duration-150 active:scale-[0.94]"
       >
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="size-[18px]"
+          className="size-4"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"

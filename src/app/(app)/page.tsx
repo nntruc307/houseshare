@@ -35,21 +35,22 @@ export default async function HomePage() {
         <Card>
           <div className="mb-1 flex items-center gap-3">
             <RoomChip code={myRoom.code} color={myRoom.color} />
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               <p className="text-xs text-muted">{monthLabel(view.month)}</p>
-              <p className="text-2xl font-bold tabular-nums">{vnd(bill.total)} đ</p>
+              <p className="text-xl font-bold whitespace-nowrap tabular-nums">{vnd(bill.total)} đ</p>
             </div>
             <PaidBadge paid={periodRoom.paid} draft={view.draft} reported={Boolean(periodRoom.payment_reported_at)} />
           </div>
-          <BillLines bill={bill} periodRoom={periodRoom} />
+          <BillLines bill={bill} periodRoom={periodRoom} compact />
           {view.draft ? (
             <p className="mt-3 rounded-xl bg-hl px-3 py-2 text-sm font-medium">
               Tháng này chưa chốt, số tiền có thể còn thay đổi. Mã QR thanh toán sẽ hiện sau khi chốt.
             </p>
           ) : null}
           {!view.draft && !periodRoom.paid && settings && settings.bank_code && settings.bank_account ? (
-            <div className="mt-4 flex flex-col items-center gap-2 border-t border-line pt-4">
+            <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-line pt-2">
               <p className="text-sm font-semibold">Quét mã để chuyển khoản</p>
+              <div className="relative">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={vietQrUrl({
@@ -61,13 +62,16 @@ export default async function HomePage() {
                 alt={`Mã QR chuyển khoản, nội dung ${transferMemo(myRoom.code, view.month)}, tự nhập số tiền`}
                 width={240}
                 height={240}
-                className="h-auto w-60 rounded-xl border border-line"
+                className="h-auto w-44 rounded-xl border border-line"
               />
-              <SaveQrButton
-                src={`/qr-image?month=${view.month.slice(0, 7)}`}
-                fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
-              />
-              <dl className="w-full space-y-2 text-sm">
+              <div className="absolute top-0 left-full ml-2">
+                <SaveQrButton
+                  src={`/qr-image?month=${view.month.slice(0, 7)}`}
+                  fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
+                />
+              </div>
+              </div>
+              <dl className="w-full space-y-0.5 text-sm">
                 <div className="flex justify-between gap-3">
                   <dt className="text-muted">Ngân hàng</dt>
                   <dd className="text-right font-medium">{settings.bank_code}</dd>
@@ -90,20 +94,14 @@ export default async function HomePage() {
               </dl>
             </div>
           ) : null}
-          {!view.draft && !periodRoom.paid ? (
-            <div className="mt-4">
-              {periodRoom.payment_reported_at ? (
-                <form action={cancelPaymentReport} className="flex flex-col gap-2">
-                  <input type="hidden" name="periodId" value={view.bundle.period.id} />
-                  <p className="rounded-xl bg-hl px-3 py-2 text-sm font-medium">
-                    Bạn đã báo thanh toán, đang chờ Trực hoặc Vi xác nhận.
-                  </p>
-                  <SubmitButton className={`${buttonClass.outline} w-full`}>Hủy báo thanh toán</SubmitButton>
-                </form>
-              ) : (
-                <PaymentConfirm periodId={view.bundle.period.id} />
-              )}
-            </div>
+          {!view.draft && !periodRoom.paid && periodRoom.payment_reported_at ? (
+            <form action={cancelPaymentReport} className="mt-2 flex flex-col gap-2">
+              <input type="hidden" name="periodId" value={view.bundle.period.id} />
+              <p className="rounded-xl bg-hl px-3 py-2 text-sm font-medium">
+                Bạn đã báo thanh toán, đang chờ Trực hoặc Vi xác nhận.
+              </p>
+              <SubmitButton className={`${buttonClass.outline} w-full`}>Hủy báo thanh toán</SubmitButton>
+            </form>
           ) : null}
         </Card>
       ) : !view ? (
@@ -125,6 +123,10 @@ export default async function HomePage() {
           <p className="text-sm text-muted">Chưa có lịch dọn.</p>
         )}
       </Card>
+
+      {view && periodRoom && !view.draft && !periodRoom.paid && !periodRoom.payment_reported_at ? (
+        <PaymentConfirm periodId={view.bundle.period.id} />
+      ) : null}
 
       {view ? (
         <Link href="/bills" className={`${buttonClass.soft} w-full`}>

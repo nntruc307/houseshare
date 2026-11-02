@@ -5,12 +5,20 @@ import type { RoomBill } from "@/lib/billing";
 import type { PeriodRoom, Room } from "@/lib/data";
 
 /** The itemised bill of one room: rent, electricity, wifi, water, trash… */
-export function BillLines({ bill, periodRoom }: { bill: RoomBill; periodRoom: PeriodRoom }) {
+export function BillLines({
+  bill,
+  periodRoom,
+  compact = false,
+}: {
+  bill: RoomBill;
+  periodRoom: PeriodRoom;
+  compact?: boolean;
+}) {
   const lines = billLines(bill, periodRoom);
   return (
     <ul className="flex flex-col divide-y divide-line">
       {lines.map((line) => (
-        <li key={line.key} className="flex items-center gap-2.5 py-2.5 text-[15px]">
+        <li key={line.key} className={`flex items-center gap-2.5 ${compact ? "py-1 text-sm" : "py-2.5 text-[15px]"}`}>
           <Dot kind={line.dot} />
           <span className="flex-1">
             {line.label}
@@ -19,9 +27,9 @@ export function BillLines({ bill, periodRoom }: { bill: RoomBill; periodRoom: Pe
           <span className="font-semibold tabular-nums">{line.value}</span>
         </li>
       ))}
-      <li className="flex items-center justify-between pt-3 text-base font-bold">
+      <li className={`flex items-center justify-between font-bold ${compact ? "pt-1.5 text-sm" : "pt-3 text-base"}`}>
         <span>Tổng cộng</span>
-        <span className="text-lg tabular-nums">{vnd(bill.total)} đ</span>
+        <span className={`tabular-nums ${compact ? "text-base" : "text-lg"}`}>{vnd(bill.total)} đ</span>
       </li>
     </ul>
   );
