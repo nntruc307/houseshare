@@ -12,7 +12,7 @@ export function vietQrUrl(opts: {
 }): string {
   const base = `https://img.vietqr.io/image/${encodeURIComponent(opts.bankCode)}-${encodeURIComponent(
     opts.account,
-  )}-compact2.png`;
+  )}-compact.png`;
   const params = new URLSearchParams({
     addInfo: opts.memo,
     accountName: opts.accountName,
