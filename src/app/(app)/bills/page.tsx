@@ -40,18 +40,20 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
         <Notice tone="brand">Tháng này chưa chốt nên số tiền chỉ là tạm tính và chưa thu tiền.</Notice>
       ) : null}
 
-      <div className={view.draft ? "hidden" : "grid grid-cols-2 gap-3"}>
-        <Card>
-          <p className="text-xs text-muted">Đã thanh toán</p>
-          <p className="text-xl font-bold">
-            {paidCount}/{bundle.rooms.length} phòng
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs text-muted">Còn phải thu</p>
-          <p className="text-xl font-bold tabular-nums">{vnd(outstanding)} đ</p>
-        </Card>
-      </div>
+      {!view.draft && me.isAdmin ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Card>
+            <p className="text-xs text-muted">Đã thanh toán</p>
+            <p className="text-xl font-bold">
+              {paidCount}/{bundle.rooms.length} phòng
+            </p>
+          </Card>
+          <Card>
+            <p className="text-xs text-muted">Còn phải thu</p>
+            <p className="text-xl font-bold tabular-nums">{vnd(outstanding)} đ</p>
+          </Card>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-3">
         {view.rooms.map((room) => {
@@ -71,7 +73,9 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
                 </span>
                 <span className="flex flex-col items-end gap-1">
                   <span className="font-bold tabular-nums">{vnd(bill.total)} đ</span>
-                  <PaidBadge paid={pr.paid} draft={view.draft} reported={Boolean(pr.payment_reported_at)} />
+                  {view.draft || me.isAdmin || mine ? (
+                    <PaidBadge paid={pr.paid} draft={view.draft} reported={Boolean(pr.payment_reported_at)} />
+                  ) : null}
                 </span>
               </summary>
               <div className="border-t border-line px-4 pt-1 pb-4">
