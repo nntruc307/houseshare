@@ -1,9 +1,10 @@
 import { MonthChips } from "@/components/month-chips";
 import { setPaid } from "@/app/actions/bills";
 import { BillLines, PaidBadge } from "@/components/bill-card";
+import { PaymentPanel } from "@/components/payment-panel";
 import { SubmitButton } from "@/components/submit-button";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
-import { getMe } from "@/lib/data";
+import { getMe, getSettings } from "@/lib/data";
 import { monthLabel, vnd } from "@/lib/format";
 import { loadMonthView } from "@/lib/month-view";
 import { EXPENSE_LABELS } from "@/lib/palette";
@@ -11,7 +12,7 @@ import { EXPENSE_LABELS } from "@/lib/palette";
 export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
   const { month: requested } = await searchParams;
   const me = await getMe();
-  const view = await loadMonthView(requested);
+  const [view, settings] = await Promise.all([loadMonthView(requested), getSettings()]);
   if (!view) {
     return (
       <>
@@ -79,8 +80,17 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
                 </span>
               </summary>
               <div className="border-t border-line px-4 pt-1 pb-4">
-                <BillLines bill={bill} periodRoom={pr} />
-                {me.isAdmin && !view.draft ? (
+                <BillLines bill={bill} periodRoom={pr} compact={mine && !view.draft && !pr.paid} />
+                {mine && !view.draft && !pr.paid ? (
+                  <PaymentPanel
+                    roomCode={room.code}
+                    month={view.month}
+                    periodId={bundle.period.id}
+                    reported={Boolean(pr.payment_reported_at)}
+                    settings={settings}
+                  />
+                ) : null}
+                {me.isAdmin && !view.draft && (!mine || pr.paid || pr.payment_reported_at) ? (
                   <form action={setPaid} className="mt-3">
                     <input type="hidden" name="periodId" value={bundle.period.id} />
                     <input type="hidden" name="roomId" value={room.id} />

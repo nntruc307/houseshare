@@ -1,16 +1,11 @@
 import Link from "next/link";
-import { cancelPaymentReport } from "@/app/actions/bills";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { CleaningPlan } from "@/components/cleaning-plan";
-import { CopyButton } from "@/components/copy-button";
-import { PaymentConfirm } from "@/components/payment-confirm";
-import { SaveQrButton } from "@/components/save-qr-button";
-import { SubmitButton } from "@/components/submit-button";
+import { PaymentPanel } from "@/components/payment-panel";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningSlots, getMe, getRooms, getSettings } from "@/lib/data";
 import { monthLabel, vnd } from "@/lib/format";
 import { loadMonthView } from "@/lib/month-view";
-import { transferMemo, vietQrUrl } from "@/lib/vietqr";
 
 export default async function HomePage() {
   const me = await getMe();
@@ -47,61 +42,14 @@ export default async function HomePage() {
               Tháng này chưa chốt, số tiền có thể còn thay đổi. Mã QR thanh toán sẽ hiện sau khi chốt.
             </p>
           ) : null}
-          {!view.draft && !periodRoom.paid && settings && settings.bank_code && settings.bank_account ? (
-            <div className="mt-2 flex flex-col items-center gap-1.5 border-t border-line pt-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={vietQrUrl({
-                  bankCode: settings.bank_code,
-                  account: settings.bank_account,
-                  accountName: settings.bank_account_name,
-                  memo: transferMemo(myRoom.code, view.month),
-                })}
-                alt={`Mã QR chuyển khoản, nội dung ${transferMemo(myRoom.code, view.month)}, tự nhập số tiền`}
-                width={240}
-                height={240}
-                className="h-auto w-60 rounded-xl border border-line"
-              />
-              <SaveQrButton
-                src={`/qr-image?month=${view.month.slice(0, 7)}`}
-                fileName={`QR-${myRoom.code}-T${Number(view.month.slice(5, 7))}-${view.month.slice(0, 4)}.png`}
-              />
-              <dl className="w-full space-y-0.5 text-sm">
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted">Ngân hàng</dt>
-                  <dd className="text-right font-medium">{settings.bank_code}</dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted">Chủ tài khoản</dt>
-                  <dd className="text-right font-medium">{settings.bank_account_name}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted">Số tài khoản</dt>
-                  <dd className="flex items-center gap-2">
-                    <span className="font-medium tabular-nums">{settings.bank_account}</span>
-                    <CopyButton value={settings.bank_account} label="Sao chép số tài khoản" />
-                  </dd>
-                </div>
-                <div className="flex justify-between gap-3">
-                  <dt className="text-muted">Nội dung</dt>
-                  <dd className="text-right font-medium">{transferMemo(myRoom.code, view.month)}</dd>
-                </div>
-              </dl>
-            </div>
-          ) : null}
-          {!view.draft && !periodRoom.paid && periodRoom.payment_reported_at ? (
-            <form action={cancelPaymentReport} className="mt-2 flex flex-col gap-2">
-              <input type="hidden" name="periodId" value={view.bundle.period.id} />
-              <p className="rounded-xl bg-hl px-3 py-2 text-sm font-medium">
-                Bạn đã báo thanh toán, đang chờ Trực hoặc Vi xác nhận.
-              </p>
-              <SubmitButton className={`${buttonClass.outline} w-full`}>Hủy báo thanh toán</SubmitButton>
-            </form>
-          ) : null}
-          {!view.draft && !periodRoom.paid && !periodRoom.payment_reported_at ? (
-            <div className="mt-3">
-              <PaymentConfirm periodId={view.bundle.period.id} />
-            </div>
+          {!view.draft && !periodRoom.paid ? (
+            <PaymentPanel
+              roomCode={myRoom.code}
+              month={view.month}
+              periodId={view.bundle.period.id}
+              reported={Boolean(periodRoom.payment_reported_at)}
+              settings={settings}
+            />
           ) : null}
         </Card>
       ) : !view ? (

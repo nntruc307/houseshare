@@ -164,7 +164,10 @@ export async function getPeriodBundle(month: string): Promise<PeriodBundle | nul
     .maybeSingle();
   if (!period) return null;
   const [rooms, payments, readings, expenses] = await Promise.all([
-    supabase.from("period_rooms").select("*").eq("period_id", period.id),
+    supabase
+      .from("period_rooms")
+      .select("period_id, room_id, rent, people, room_name, adjustment, adjustment_note")
+      .eq("period_id", period.id),
     // RLS returns only the viewer's own room unless they are an admin.
     supabase
       .from("period_room_payments")
