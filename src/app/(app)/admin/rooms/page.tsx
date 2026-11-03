@@ -9,13 +9,15 @@ import { todayVN } from "@/lib/format";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminRoomsPage() {
-  const rooms = await getRooms();
   const supabase = await createClient();
   const today = todayVN();
-  const { data: memberships } = await supabase
-    .from("room_memberships")
-    .select("profile_id, room_id, end_date, profiles!inner(id, full_name, email, role, active)")
-    .lte("start_date", today);
+  const [rooms, { data: memberships }] = await Promise.all([
+    getRooms(),
+    supabase
+      .from("room_memberships")
+      .select("profile_id, room_id, end_date, profiles!inner(id, full_name, email, role, active)")
+      .lte("start_date", today),
+  ]);
   const current = (memberships ?? []).filter((m) => !m.end_date || m.end_date >= today);
   const lite = rooms.map((r) => ({ id: r.id, code: r.code, name: r.name }));
 

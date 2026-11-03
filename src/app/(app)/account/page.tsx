@@ -5,8 +5,7 @@ import { getMe, getRooms } from "@/lib/data";
 
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const { reset } = await searchParams;
-  const me = await getMe();
-  const rooms = await getRooms();
+  const [me, rooms] = await Promise.all([getMe(), getRooms()]);
   const room = rooms.find((r) => r.id === me.roomId);
   return (
     <>

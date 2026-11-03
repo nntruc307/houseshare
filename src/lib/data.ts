@@ -90,20 +90,22 @@ export const getMe = cache(async (): Promise<Me> => {
   const userId = claims?.claims?.sub;
   if (!userId) redirect("/login");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role, active")
-    .eq("id", userId)
-    .maybeSingle();
+  const today = todayVN();
+  const [{ data: profile }, { data: memberships }] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("id, full_name, email, role, active")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("room_memberships")
+      .select("room_id, start_date, end_date")
+      .eq("profile_id", userId)
+      .lte("start_date", today)
+      .order("start_date", { ascending: false }),
+  ]);
   if (!profile || !profile.active) redirect("/login?error=inactive");
 
-  const today = todayVN();
-  const { data: memberships } = await supabase
-    .from("room_memberships")
-    .select("room_id, start_date, end_date")
-    .eq("profile_id", userId)
-    .lte("start_date", today)
-    .order("start_date", { ascending: false });
   const current = (memberships ?? []).find((m) => !m.end_date || m.end_date >= today);
 
   return {
@@ -145,23 +147,20 @@ export const getSettings = cache(async (): Promise<Settings | null> => {
 });
 
 /** Months the current user can see, newest first (RLS hides drafts from members). */
-export const listPeriods = cache(async (): Promise<Pick<Period, "id" | "month" | "status">[]> => {
+export const listPeriods = cache(async (): Promise<Period[]> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("periods")
-    .select("id, month, status")
+    .select("id, month, main_kwh, electricity_amount, status, closed_at")
     .order("month", { ascending: false });
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []).map((p) => ({ ...p, main_kwh: Number(p.main_kwh) })) as Period[];
 });
 
 export async function getPeriodBundle(month: string): Promise<PeriodBundle | null> {
-  const supabase = await createClient();
-  const { data: period } = await supabase
-    .from("periods")
-    .select("id, month, main_kwh, electricity_amount, status, closed_at")
-    .eq("month", month)
-    .maybeSingle();
+  // Reuses the month list, which pages have already loaded, instead of asking again.
+  const [supabase, periods] = await Promise.all([createClient(), listPeriods()]);
+  const period = periods.find((p) => p.month === month);
   if (!period) return null;
   const [rooms, payments, readings, expenses] = await Promise.all([
     supabase
@@ -177,7 +176,7 @@ export async function getPeriodBundle(month: string): Promise<PeriodBundle | nul
     supabase.from("period_expenses").select("*").eq("period_id", period.id).order("sort"),
   ]);
   return {
-    period: { ...period, main_kwh: Number(period.main_kwh) } as Period,
+    period,
     rooms: (rooms.data ?? []).map((r) => {
       const payment = payments.data?.find((x) => x.room_id === r.room_id);
       return {
@@ -267,10 +266,14 @@ export async function getCleaningSlots(rooms: Room[]): Promise<Slot[]> {
   if (error) throw error;
   let slots = (data ?? []).map(toSlot);
   const roomIds = rooms.map((r) => r.id);
+  if (roomIds.length === 0) return slots.sort((a, b) => (a.date < b.date ? -1 : 1));
 
   const extra = slotsToAdd(slots, roomIds.length, PLAN_AHEAD);
   const needsSeed = slots.length === 0 && roomIds.length > 0;
   if (!needsSeed && extra.length === 0) return slots.sort((a, b) => (a.date < b.date ? -1 : 1));
+
+  // Pages load this alongside getMe(), so confirm the caller before writing.
+  await getMe();
 
   // Writing the rota needs the server key. If it is not configured the page
   // still works with the turns already planned.

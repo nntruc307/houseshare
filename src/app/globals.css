@@ -73,7 +73,7 @@ button {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -82,15 +82,22 @@ button {
 }
 
 .page-enter > * {
-  animation: rise 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: rise 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-.page-enter > :nth-child(2) { animation-delay: 0.04s; }
-.page-enter > :nth-child(3) { animation-delay: 0.08s; }
-.page-enter > :nth-child(4) { animation-delay: 0.12s; }
-.page-enter > :nth-child(5) { animation-delay: 0.16s; }
-.page-enter > :nth-child(n + 6) { animation-delay: 0.2s; }
+.page-enter > :nth-child(2) { animation-delay: 0.02s; }
+.page-enter > :nth-child(3) { animation-delay: 0.04s; }
+.page-enter > :nth-child(n + 4) { animation-delay: 0.06s; }
 
-/* Placeholder blocks shown while a page is loading. */
+/* Placeholder blocks shown while a page is loading. They wait a moment so a
+   quick page change goes straight to the content without a flash. */
+.loading-shell {
+  animation: fade-in 0.15s ease-out 0.15s both;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
 @keyframes pulse-soft {
   50% {
     opacity: 0.55;
@@ -112,6 +119,7 @@ details[open] > :not(summary) {
 
 @media (prefers-reduced-motion: reduce) {
   .page-enter > *,
+  .loading-shell,
   details[open] > :not(summary),
   .skeleton {
     animation: none;

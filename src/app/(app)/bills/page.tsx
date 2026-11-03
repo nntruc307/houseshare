@@ -11,8 +11,7 @@ import { EXPENSE_LABELS } from "@/lib/palette";
 
 export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
   const { month: requested } = await searchParams;
-  const me = await getMe();
-  const [view, settings] = await Promise.all([loadMonthView(requested), getSettings()]);
+  const [me, view, settings] = await Promise.all([getMe(), loadMonthView(requested), getSettings()]);
   if (!view) {
     return (
       <>

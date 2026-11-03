@@ -10,8 +10,7 @@ export async function GET(request: Request) {
   const month = normalizeMonth(new URL(request.url).searchParams.get("month") ?? undefined);
   if (!month) return new Response(null, { status: 400 });
 
-  const me = await getMe();
-  const [rooms, settings] = await Promise.all([getRooms(), getSettings()]);
+  const [me, rooms, settings] = await Promise.all([getMe(), getRooms(), getSettings()]);
   const room = rooms.find((r) => r.id === me.roomId);
   if (!room || !settings?.bank_code || !settings.bank_account) return new Response(null, { status: 404 });
 

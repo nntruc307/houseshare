@@ -8,9 +8,13 @@ import { monthLabel, vnd } from "@/lib/format";
 import { loadMonthView } from "@/lib/month-view";
 
 export default async function HomePage() {
-  const me = await getMe();
-  const [rooms, settings, view] = await Promise.all([getRooms(), getSettings(), loadMonthView()]);
-  const slots = await getCleaningSlots(rooms);
+  const [me, rooms, settings, view, slots] = await Promise.all([
+    getMe(),
+    getRooms(),
+    getSettings(),
+    loadMonthView(),
+    getRooms().then(getCleaningSlots),
+  ]);
   const myRoom = rooms.find((r) => r.id === me.roomId) ?? null;
 
   const bill = myRoom && view ? view.billByRoom.get(myRoom.id) : undefined;

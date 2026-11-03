@@ -9,13 +9,17 @@ import { fullDate, todayVN } from "@/lib/format";
 import { pendingSlots } from "@/lib/cleaning";
 
 export default async function CleaningPage() {
-  const me = await getMe();
-  const rooms = await getRooms();
-  const [slots, logs] = await Promise.all([getCleaningSlots(rooms), getCleaningLogs(12)]);
+  const logsQuery = getCleaningLogs(12);
+  const [me, rooms, slots, logs, names] = await Promise.all([
+    getMe(),
+    getRooms(),
+    getRooms().then(getCleaningSlots),
+    logsQuery,
+    logsQuery.then((list) =>
+      getProfilesById([...new Set(list.map((l) => l.recorded_by).filter((v): v is string => !!v))]),
+    ),
+  ]);
   const byId = new Map(rooms.map((r) => [r.id, r]));
-  const names = await getProfilesById(
-    [...new Set(logs.map((l) => l.recorded_by).filter((v): v is string => !!v))],
-  );
   const canRecord = me.isAdmin || !!me.roomId;
   const pending = pendingSlots(slots);
   const lite = rooms.map((r) => ({ id: r.id, code: r.code, name: r.name }));

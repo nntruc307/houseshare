@@ -34,7 +34,7 @@ export function normalizeMonth(input: string | string[] | undefined): string | n
 
 /** The month to show (requested or newest closed month) with every number computed. */
 export async function loadMonthView(requested?: string | string[]): Promise<MonthView | null> {
-  const periods = await listPeriods();
+  const [periods, allRooms] = await Promise.all([listPeriods(), getRooms()]);
   const months = periods.map((p) => p.month);
   if (months.length === 0) return null;
   const wanted = normalizeMonth(requested);
@@ -43,7 +43,7 @@ export async function loadMonthView(requested?: string | string[]): Promise<Mont
   const oldestDraft = periods.filter((p) => p.status === "draft").at(-1)?.month;
   const month = wanted && months.includes(wanted) ? wanted : (oldestDraft ?? months[0]);
 
-  const [bundle, allRooms] = await Promise.all([getPeriodBundle(month), getRooms()]);
+  const bundle = await getPeriodBundle(month);
   if (!bundle) return null;
 
   const inMonth = new Set(bundle.rooms.map((r) => r.room_id));

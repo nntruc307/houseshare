@@ -45,7 +45,7 @@ export async function loadMonthForm(requested?: string | string[]): Promise<{
   state: MonthFormState;
   months: { month: string; status: string }[];
 }> {
-  const periods = await listPeriods(); // newest first, includes drafts for admins
+  const [periods, rooms] = await Promise.all([listPeriods(), getRooms()]); // newest first, includes drafts for admins
   const wanted = normalizeMonth(requested);
   const draft = periods.find((p) => p.status === "draft");
   const latest = periods[0];
@@ -54,10 +54,11 @@ export async function loadMonthForm(requested?: string | string[]): Promise<{
     draft?.month ??
     (latest ? addMonth(latest.month, 1) : `${todayVN().slice(0, 7)}-01`);
 
-  const rooms = await getRooms();
-  const existing = await getPeriodBundle(month);
   const prevPeriod = periods.find((p) => p.month < month);
-  const prev = prevPeriod ? await getPeriodBundle(prevPeriod.month) : null;
+  const [existing, prev] = await Promise.all([
+    getPeriodBundle(month),
+    prevPeriod ? getPeriodBundle(prevPeriod.month) : null,
+  ]);
 
   // Only the newest month follows the Rooms tab. An older month that is reopened
   // keeps the names, rents and head counts it was closed with.
