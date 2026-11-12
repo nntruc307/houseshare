@@ -1,0 +1,65 @@
+# Keeps the Supabase free-tier project from being paused (pauses after
+# 7 days without activity) and checks the Vercel site is up.
+# Runs Monday and Thursday around 9:00 Vietnam time (UTC+7).
+name: Keepalive
+
+on:
+  schedule:
+    - cron: "13 2 * * 1,4" # 02:13 UTC = 09:13 VN, Mon + Thu
+  workflow_dispatch: # allow "Run workflow" by hand
+
+permissions:
+  actions: write # needed to re-enable this workflow (step 3)
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Supabase database
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_KEY" ]; then
+            echo "::error::Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY secret"
+            exit 1
+          fi
+          # A real query through PostgREST so it counts as database activity.
+          # Anonymous callers see no rows because of RLS; that is expected.
+          for i in 1 2 3; do
+            code=$(curl -sS -o body.txt -w "%{http_code}" \
+              "$SUPABASE_URL/rest/v1/rooms?select=id&limit=1" \
+              -H "apikey: $SUPABASE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_KEY") || code=000
+            echo "Attempt $i: HTTP $code $(head -c 200 body.txt 2>/dev/null)"
+            if [ "$code" = "200" ] || grep -q '"42501"' body.txt 2>/dev/null; then
+              echo "Supabase OK"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Supabase did not respond normally (project may be paused)"
+          exit 1
+
+      - name: Open the website
+        run: |
+          code=$(curl -sS -L -o /dev/null -w "%{http_code}" --max-time 60 \
+            "https://houseshare-lilac.vercel.app/") || code=000
+          echo "Website: HTTP $code"
+          if [ "$code" != "200" ]; then
+            echo "::error::Website returned HTTP $code"
+            exit 1
+          fi
+
+      - name: Keep this schedule enabled
+        # GitHub turns off scheduled workflows after 60 days with no repo
+        # activity. Re-enabling through the API resets that timer without
+        # committing anything to main.
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X PUT \
+            "repos/${{ github.repository }}/actions/workflows/keepalive.yml/enable"
+          echo "Workflow re-enabled"
