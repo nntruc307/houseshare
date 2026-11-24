@@ -36,11 +36,15 @@ export function RecordCleaningForm({
           return { id: c.slotId, date: was.date, from: was.roomId, to: now.roomId };
         })
         .filter((m) => m.from !== m.to);
+      if (plan.kind === "substitute" && fixedRoomId) {
+        // members cannot change the rota; only an admin can record a covering clean
+        return { plan: null, moved: [], error: "Chưa đến lượt phòng bạn. Nhờ admin ghi nhận để đổi lịch." };
+      }
       return { plan, moved, error: null as string | null };
     } catch (e) {
       return { plan: null, moved: [], error: e instanceof Error ? e.message : "Lỗi" };
     }
-  }, [slots, roomId, date]);
+  }, [slots, roomId, date, fixedRoomId]);
 
   return (
     <form action={action} className="flex flex-col gap-3">

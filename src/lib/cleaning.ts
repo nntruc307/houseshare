@@ -41,6 +41,15 @@ export function nextSaturdayAfter(d: string): string {
   return addDays(d, delta);
 }
 
+/**
+ * The Saturday of the week that `d` belongs to. Weeks run Monday to Sunday, so
+ * a Sunday still belongs to the Saturday just before it (15/11 -> 14/11).
+ */
+export function weekSaturday(d: string): string {
+  const dow = parseDate(d).getUTCDay(); // 0 = Sunday, 6 = Saturday
+  return addDays(d, dow === 0 ? -1 : 6 - dow);
+}
+
 export function sortSlots(slots: Slot[]): Slot[] {
   return [...slots].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
@@ -58,9 +67,9 @@ export function pendingSlots(slots: Slot[]): Slot[] {
  * Decide what a cleaning record by `roomId` on `cleanedOn` means.
  *
  * - The room whose turn it is cleans: its slot is done, nothing moves.
- * - A room cleans during its own week, even while an earlier room is still
- *   overdue: its own slot is done, nothing moves (the overdue room stays
- *   highlighted).
+ * - A room cleans during its own week (Monday to Sunday around its Saturday),
+ *   or later, even while an earlier room is still overdue: its own slot is
+ *   done, nothing moves (the overdue room stays highlighted).
  * - Otherwise the room is covering for the room whose turn it is (A):
  *     the cleaner (B) takes A's slot, A moves to the next Saturday, and the
  *     room that held next Saturday takes B's old slot. If B itself held next
@@ -76,7 +85,7 @@ export function planRecord(slots: Slot[], roomId: string, cleanedOn: string): Re
   }
 
   const own = pending.find((s) => s.roomId === roomId);
-  if (own && cleanedOn >= addDays(own.date, -6)) {
+  if (own && own.date <= weekSaturday(cleanedOn)) {
     return { kind: "own", slotId: own.id, changes: [] };
   }
   if (!own) throw new Error("Phòng này chưa có trong lịch dọn");

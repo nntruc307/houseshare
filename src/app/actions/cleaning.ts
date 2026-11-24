@@ -17,7 +17,7 @@ function admin() {
 
 const NO_KEY = "Máy chủ chưa được cấu hình khóa quản trị (SUPABASE_SECRET_KEY).";
 
-/** A member records their own room; an admin can record any room. */
+/** A member records their own turn only; an admin can record any room and change the rota. */
 export async function recordCleaning(_prev: FormState, formData: FormData): Promise<FormState> {
   const me = await getMe();
   const roomId = String(formData.get("roomId") ?? "");
@@ -34,6 +34,11 @@ export async function recordCleaning(_prev: FormState, formData: FormData): Prom
     plan = planRecord(slots, roomId, cleanedOn);
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Không ghi nhận được" };
+  }
+
+  // Changing the rota is admin-only: a member can only record their own turn.
+  if (plan.kind === "substitute" && !me.isAdmin) {
+    return { error: "Chưa đến lượt phòng bạn. Nhờ admin ghi nhận để đổi lịch." };
   }
 
   const db = admin();

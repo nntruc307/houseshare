@@ -6,6 +6,7 @@ import {
   planRecord,
   seedSlots,
   slotsToAdd,
+  weekSaturday,
   type Slot,
 } from "./cleaning";
 
@@ -25,6 +26,15 @@ describe("dates", () => {
     expect(nextSaturdayAfter("2026-10-31")).toBe("2026-11-07"); // from a Saturday
     expect(nextSaturdayAfter("2026-11-01")).toBe("2026-11-07"); // from a Sunday
     expect(nextSaturdayAfter("2026-11-06")).toBe("2026-11-07");
+  });
+});
+
+describe("weekSaturday", () => {
+  it("weeks run Monday to Sunday, so Sunday belongs to the Saturday before", () => {
+    expect(weekSaturday("2026-11-14")).toBe("2026-11-14"); // Saturday
+    expect(weekSaturday("2026-11-15")).toBe("2026-11-14"); // Sunday
+    expect(weekSaturday("2026-11-16")).toBe("2026-11-21"); // Monday
+    expect(weekSaturday("2026-11-20")).toBe("2026-11-21"); // Friday
   });
 });
 
@@ -79,6 +89,40 @@ describe("planRecord", () => {
     expect(p).toEqual({ kind: "own", slotId: "s2", changes: [] });
     const after = applyPlan(plan, p);
     expect(currentSlot(after)?.roomId).toBe("201"); // still highlighted
+  });
+});
+
+describe("Sunday after the Saturday slot", () => {
+  // 102 is overdue on 14/11; 202 is planned for 21/11 but cleaned on Sunday 15/11.
+  const slots: Slot[] = [
+    { id: "a", date: "2026-11-14", roomId: "102", status: "pending", rescheduled: false },
+    { id: "b", date: "2026-11-21", roomId: "202", status: "pending", rescheduled: false },
+    { id: "c", date: "2026-11-28", roomId: "101", status: "pending", rescheduled: false },
+  ];
+
+  it("counts for the week of 14/11, not for 202's own Saturday", () => {
+    const p = planRecord(slots, "202", "2026-11-15");
+    expect(p.kind).toBe("substitute");
+    expect(p.slotId).toBe("a");
+    const after = applyPlan(slots, p);
+    expect(rooms(after)).toEqual(["11-14:202:d", "11-21:102:p", "11-28:101:p"]);
+    expect(currentSlot(after)?.roomId).toBe("102");
+  });
+
+  it("a room that was not next: the room on the next Saturday takes its old slot", () => {
+    const s2: Slot[] = [
+      { id: "a", date: "2026-11-14", roomId: "102", status: "pending", rescheduled: false },
+      { id: "b", date: "2026-11-21", roomId: "101", status: "pending", rescheduled: false },
+      { id: "c", date: "2026-11-28", roomId: "202", status: "pending", rescheduled: false },
+    ];
+    const after = applyPlan(s2, planRecord(s2, "202", "2026-11-15"));
+    expect(rooms(after)).toEqual(["11-14:202:d", "11-21:102:p", "11-28:101:p"]);
+  });
+
+  it("a late record by the room on the next Saturday still counts for its own slot", () => {
+    const s3 = applyPlan(slots, planRecord(slots, "202", "2026-11-15")); // 102 now on 21/11
+    const p = planRecord(s3, "102", "2026-11-23");
+    expect(p).toEqual({ kind: "own", slotId: "b", changes: [] });
   });
 });
 
