@@ -5,7 +5,7 @@ import { SubmitButton } from "@/components/submit-button";
 import { SwapForm } from "@/components/swap-form";
 import { Badge, Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningLogs, getCleaningSlots, getMe, getProfilesById, getRooms } from "@/lib/data";
-import { fullDate, todayVN } from "@/lib/format";
+import { dayMonth, monthLabel, todayVN } from "@/lib/format";
 import { pendingSlots } from "@/lib/cleaning";
 
 export default async function CleaningPage() {
@@ -22,6 +22,14 @@ export default async function CleaningPage() {
   const byId = new Map(rooms.map((r) => [r.id, r]));
   const canRecord = me.isAdmin || !!me.roomId;
   const pending = pendingSlots(slots);
+  // History grouped by month, newest first.
+  const groups: { month: string; logs: typeof logs }[] = [];
+  for (const log of logs) {
+    const month = log.cleaned_on.slice(0, 7);
+    const last = groups[groups.length - 1];
+    if (last?.month === month) last.logs.push(log);
+    else groups.push({ month, logs: [log] });
+  }
   const lite = rooms.map((r) => ({ id: r.id, code: r.code, name: r.name }));
 
   return (
@@ -71,31 +79,40 @@ export default async function CleaningPage() {
 
       <Card>
         <SectionLabel>Lịch sử gần đây</SectionLabel>
-        <ul className="mt-2 flex flex-col divide-y divide-line">
-          {logs.map((log) => {
-            const room = byId.get(log.room_id);
-            const covered = log.substitute_for ? byId.get(log.substitute_for) : null;
-            return (
-              <li key={log.id} className="flex items-center gap-3 py-2.5 text-sm">
-                <span className="w-24 font-semibold tabular-nums">{fullDate(log.cleaned_on)}</span>
-                {room ? <RoomChip code={room.code} color={room.color} size="sm" /> : null}
-                <span className="flex-1 text-muted">
-                  {covered ? `dọn thay ${covered.code}` : ""}
-                  {log.recorded_by && log.source !== "excel" ? ` · ${names.get(log.recorded_by) ?? ""}` : ""}
-                  {log.source === "excel" ? <Badge tone="brand">từ Excel</Badge> : null}
-                </span>
-                {me.isAdmin && log.source !== "excel" ? (
-                  <form action={undoCleaning}>
-                    <input type="hidden" name="logId" value={log.id} />
-                    <SubmitButton className={`${buttonClass.danger} min-h-9 px-3 text-xs`} pendingLabel="…">
-                      Hoàn tác
-                    </SubmitButton>
-                  </form>
-                ) : null}
-              </li>
-            );
-          })}
-        </ul>
+        {groups.map((g) => (
+          <div key={g.month} className="mt-3">
+            <p className="text-xs font-bold text-muted">{monthLabel(`${g.month}-01`)}</p>
+            <ul className="flex flex-col divide-y divide-line">
+              {g.logs.map((log) => {
+                const room = byId.get(log.room_id);
+                const covered = log.substitute_for ? byId.get(log.substitute_for) : null;
+                return (
+                  <li key={log.id} className="flex items-center gap-3 py-2.5 text-sm">
+                    <span className="w-12 font-semibold tabular-nums">{dayMonth(log.cleaned_on)}</span>
+                    {room ? <RoomChip code={room.code} color={room.color} size="sm" /> : null}
+                    <span className="flex flex-1 flex-wrap items-center gap-1.5 text-muted">
+                      {covered ? (
+                        <>
+                          dọn thay <RoomChip code={covered.code} color={covered.color} size="sm" />
+                        </>
+                      ) : null}
+                      {log.recorded_by && log.source !== "excel" ? names.get(log.recorded_by) ?? "" : ""}
+                      {log.source === "excel" ? <Badge tone="brand">từ Excel</Badge> : null}
+                    </span>
+                    {me.isAdmin && log.source !== "excel" ? (
+                      <form action={undoCleaning}>
+                        <input type="hidden" name="logId" value={log.id} />
+                        <SubmitButton className={`${buttonClass.danger} min-h-9 px-3 text-xs`} pendingLabel="…">
+                          Hoàn tác
+                        </SubmitButton>
+                      </form>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </Card>
     </>
   );
