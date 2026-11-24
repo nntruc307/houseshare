@@ -70,7 +70,8 @@ export async function addMember(_prev: FormState, formData: FormData): Promise<F
     email_confirm: true,
   });
   if (error || !created.user) {
-    return { error: error?.message.includes("already") ? "Email này đã có tài khoản" : "Không tạo được tài khoản" };
+    if (error?.message.includes("already")) return reactivateMember(db, name, email, roomId);
+    return { error: "Không tạo được tài khoản" };
   }
   const id = created.user.id;
   const { error: profileError } = await db
@@ -83,6 +84,44 @@ export async function addMember(_prev: FormState, formData: FormData): Promise<F
   await db.from("room_memberships").insert({ profile_id: id, room_id: roomId, start_date: todayVN() });
   revalidatePath("/", "layout");
   return { ok: `Đã thêm ${name}. Mật khẩu mặc định: ${DEFAULT_PASSWORD}` };
+}
+
+/**
+ * The email already has an account (someone who moved out earlier, or a leftover).
+ * If they are not in any room, bring the account back: unlock it, set the new
+ * name, reset the password and open a membership in the chosen room. History stays.
+ */
+async function reactivateMember(
+  db: NonNullable<ReturnType<typeof admin>>,
+  name: string,
+  email: string,
+  roomId: string,
+): Promise<FormState> {
+  const { data: profile } = await db.from("profiles").select("id").eq("email", email).maybeSingle();
+  if (!profile) return { error: "Email này đã có tài khoản" };
+
+  const { data: open } = await db
+    .from("room_memberships")
+    .select("room_id")
+    .eq("profile_id", profile.id)
+    .is("end_date", null);
+  if ((open ?? []).length > 0) {
+    const { data: room } = await db.from("rooms").select("name").eq("id", open![0].room_id).maybeSingle();
+    return {
+      error: `Email này đang ở phòng ${room?.name ?? "khác"}. Dùng chức năng chuyển phòng thay vì thêm mới`,
+    };
+  }
+
+  const { error: pwError } = await db.auth.admin.updateUserById(profile.id, { password: DEFAULT_PASSWORD });
+  if (pwError) return { error: "Không đặt lại được mật khẩu" };
+  const { error: profileError } = await db
+    .from("profiles")
+    .update({ full_name: name, active: true })
+    .eq("id", profile.id);
+  if (profileError) return { error: "Không mở lại được tài khoản" };
+  await db.from("room_memberships").insert({ profile_id: profile.id, room_id: roomId, start_date: todayVN() });
+  revalidatePath("/", "layout");
+  return { ok: `Đã thêm lại ${name}. Mật khẩu đặt lại: ${DEFAULT_PASSWORD}` };
 }
 
 export async function moveMember(formData: FormData) {
