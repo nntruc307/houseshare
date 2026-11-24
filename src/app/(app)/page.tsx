@@ -2,9 +2,11 @@ import Link from "next/link";
 import { BillLines, PaidBadge } from "@/components/bill-card";
 import { CleaningPlan } from "@/components/cleaning-plan";
 import { PaymentPanel } from "@/components/payment-panel";
+import { RecordCleaningToggle } from "@/components/record-cleaning-toggle";
 import { Card, Notice, PageTitle, RoomChip, SectionLabel, buttonClass } from "@/components/ui";
 import { getCleaningSlots, getMe, getRooms, getSettings } from "@/lib/data";
-import { monthLabel, vnd } from "@/lib/format";
+import { pendingSlots } from "@/lib/cleaning";
+import { monthLabel, todayVN, vnd } from "@/lib/format";
 import { loadMonthView } from "@/lib/month-view";
 
 export default async function HomePage() {
@@ -16,6 +18,8 @@ export default async function HomePage() {
     getRooms().then(getCleaningSlots),
   ]);
   const myRoom = rooms.find((r) => r.id === me.roomId) ?? null;
+  const canRecord = me.isAdmin || !!me.roomId;
+  const hasPending = pendingSlots(slots).length > 0;
 
   const bill = myRoom && view ? view.billByRoom.get(myRoom.id) : undefined;
   const periodRoom = myRoom && view ? view.periodRoomById.get(myRoom.id) : undefined;
@@ -74,6 +78,15 @@ export default async function HomePage() {
         ) : (
           <p className="text-sm text-muted">Chưa có lịch dọn.</p>
         )}
+        {canRecord && hasPending ? (
+          <RecordCleaningToggle
+            slots={slots}
+            rooms={rooms.map((r) => ({ id: r.id, code: r.code, name: r.name }))}
+            fixedRoomId={me.isAdmin ? null : me.roomId}
+            today={todayVN()}
+            isAdmin={me.isAdmin}
+          />
+        ) : null}
       </Card>
 
       {view ? (
