@@ -1,6 +1,7 @@
 import "server-only";
 import { calculateBills, type BillSummary, type RoomBill } from "./billing";
 import {
+  getMe,
   getPeriodBundle,
   getRooms,
   listPeriods,
@@ -34,7 +35,7 @@ export function normalizeMonth(input: string | string[] | undefined): string | n
 
 /** The month to show (requested or newest closed month) with every number computed. */
 export async function loadMonthView(requested?: string | string[]): Promise<MonthView | null> {
-  const [periods, allRooms] = await Promise.all([listPeriods(), getRooms()]);
+  const [periods, allRooms, me] = await Promise.all([listPeriods(), getRooms(), getMe()]);
   const months = periods.map((p) => p.month);
   if (months.length === 0) return null;
   const wanted = normalizeMonth(requested);
@@ -52,19 +53,36 @@ export async function loadMonthView(requested?: string | string[]): Promise<Mont
   const rooms = allRooms
     .filter((r) => inMonth.has(r.id))
     .map((r) => ({ ...r, name: nameOf.get(r.id)?.trim() || r.name }));
-  const summary = calculateBills(toBillInput(bundle, rooms));
+  const fullSummary = calculateBills(toBillInput(bundle, rooms));
   const i = months.indexOf(month);
+
+  // Members see their own room's bill only (house-wide totals stay visible).
+  // Everything about other rooms is dropped here, before it can reach a page.
+  let view = { bundle, rooms, summary: fullSummary };
+  if (!me.isAdmin) {
+    const own = me.roomId;
+    const ownMeters = new Set(rooms.find((r) => r.id === own)?.meters.map((m) => m.id) ?? []);
+    view = {
+      bundle: {
+        ...bundle,
+        rooms: bundle.rooms.filter((r) => r.room_id === own),
+        readings: bundle.readings.filter((r) => ownMeters.has(r.meter_id)),
+      },
+      rooms: rooms.filter((r) => r.id === own),
+      summary: { ...fullSummary, rooms: fullSummary.rooms.filter((b) => b.roomId === own) },
+    };
+  }
   return {
     months,
     month,
     draft: bundle.period.status === "draft",
     prev: months[i + 1] ?? null,
     next: months[i - 1] ?? null,
-    bundle,
-    rooms,
-    summary,
-    billByRoom: new Map(summary.rooms.map((b) => [b.roomId, b])),
-    periodRoomById: new Map(bundle.rooms.map((r) => [r.room_id, r])),
+    bundle: view.bundle,
+    rooms: view.rooms,
+    summary: view.summary,
+    billByRoom: new Map(view.summary.rooms.map((b) => [b.roomId, b])),
+    periodRoomById: new Map(view.bundle.rooms.map((r) => [r.room_id, r])),
   };
 }
 

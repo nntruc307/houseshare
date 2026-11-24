@@ -78,7 +78,7 @@ export default async function HomePage() {
 
       {view ? (
         <Link href="/bills" className={`${buttonClass.soft} w-full`}>
-          Xem hóa đơn cả nhà
+          {me.isAdmin ? "Xem hóa đơn cả nhà" : "Xem hóa đơn các tháng"}
         </Link>
       ) : null}
     </>
