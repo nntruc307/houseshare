@@ -32,7 +32,7 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
 
   return (
     <>
-      <PageTitle title={monthLabel(view.month)} subtitle={view.draft ? "Hóa đơn cả nhà · bản nháp, chưa chốt" : "Hóa đơn cả nhà"} />
+      <PageTitle title={monthLabel(view.month)} subtitle={`${me.isAdmin ? "Hóa đơn cả nhà" : "Hóa đơn phòng bạn"}${view.draft ? " · bản nháp, chưa chốt" : ""}`} />
 
       <MonthChips months={view.months} selected={view.month} href="/bills" />
 
@@ -53,6 +53,10 @@ export default async function BillsPage({ searchParams }: PageProps<"/bills">) {
             <p className="text-xl font-bold tabular-nums">{vnd(outstanding)} đ</p>
           </Card>
         </div>
+      ) : null}
+
+      {!me.isAdmin && view.rooms.length === 0 ? (
+        <Notice tone="brand">Bạn chưa thuộc phòng nào hoặc phòng bạn chưa có trong tháng này.</Notice>
       ) : null}
 
       <div className="flex flex-col gap-3">

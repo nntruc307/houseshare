@@ -162,8 +162,12 @@ export async function getPeriodBundle(month: string): Promise<PeriodBundle | nul
   const [supabase, periods] = await Promise.all([createClient(), listPeriods()]);
   const period = periods.find((p) => p.month === month);
   if (!period) return null;
+  // Rooms and meter readings of ALL rooms are needed to work out any one bill, so they are
+  // read with the server key. RLS no longer lets members read other rooms' rows; callers
+  // (loadMonthView) must cut the result down to the viewer's own room before it reaches a page.
+  const db = createAdminClient();
   const [rooms, payments, readings, expenses] = await Promise.all([
-    supabase
+    db
       .from("period_rooms")
       .select("period_id, room_id, rent, people, room_name, adjustment, adjustment_note")
       .eq("period_id", period.id),
@@ -172,7 +176,7 @@ export async function getPeriodBundle(month: string): Promise<PeriodBundle | nul
       .from("period_room_payments")
       .select("room_id, paid, paid_at, payment_reported_at")
       .eq("period_id", period.id),
-    supabase.from("meter_readings").select("*").eq("period_id", period.id),
+    db.from("meter_readings").select("*").eq("period_id", period.id),
     supabase.from("period_expenses").select("*").eq("period_id", period.id).order("sort"),
   ]);
   return {
