@@ -18,7 +18,7 @@ export default async function AdminRoomsPage() {
       .select("profile_id, room_id, end_date, profiles!inner(id, full_name, email, role, active)")
       .lte("start_date", today),
   ]);
-  const current = (memberships ?? []).filter((m) => !m.end_date || m.end_date >= today);
+  const current = (memberships ?? []).filter((m) => (!m.end_date || m.end_date > today) && (Array.isArray(m.profiles) ? m.profiles[0] : m.profiles)?.active !== false);
   const lite = rooms.map((r) => ({ id: r.id, code: r.code, name: r.name }));
 
   return (

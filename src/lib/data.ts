@@ -102,11 +102,12 @@ export const getMe = cache(async (): Promise<Me> => {
       .select("room_id, start_date, end_date")
       .eq("profile_id", userId)
       .lte("start_date", today)
-      .order("start_date", { ascending: false }),
+      .order("start_date", { ascending: false })
+      .order("end_date", { ascending: false, nullsFirst: true }),
   ]);
   if (!profile || !profile.active) redirect("/login?error=inactive");
 
-  const current = (memberships ?? []).find((m) => !m.end_date || m.end_date >= today);
+  const current = (memberships ?? []).find((m) => !m.end_date || m.end_date > today);
 
   return {
     id: profile.id,

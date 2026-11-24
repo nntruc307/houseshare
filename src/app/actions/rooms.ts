@@ -92,6 +92,13 @@ export async function moveMember(formData: FormData) {
   if (!profileId || !roomId) return;
   const supabase = await createClient();
   const today = todayVN();
+  const { data: open } = await supabase
+    .from("room_memberships")
+    .select("room_id")
+    .eq("profile_id", profileId)
+    .is("end_date", null);
+  // Already in that room: nothing to do (avoids duplicate memberships).
+  if ((open ?? []).some((m) => m.room_id === roomId)) return;
   await supabase
     .from("room_memberships")
     .update({ end_date: today })
