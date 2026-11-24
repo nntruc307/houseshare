@@ -33,6 +33,11 @@ export function addDays(d: string, days: number): string {
   return formatDate(new Date(parseDate(d).getTime() + days * DAY));
 }
 
+/** Whole days from `a` to `b` (negative when `b` is earlier). */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseDate(b).getTime() - parseDate(a).getTime()) / DAY);
+}
+
 /** The first Saturday strictly after `d`. */
 export function nextSaturdayAfter(d: string): string {
   const date = parseDate(d);

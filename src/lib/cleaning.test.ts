@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyPlan,
   currentSlot,
+  daysBetween,
   nextSaturdayAfter,
   planRecord,
   seedSlots,
@@ -35,6 +36,14 @@ describe("weekSaturday", () => {
     expect(weekSaturday("2026-11-15")).toBe("2026-11-14"); // Sunday
     expect(weekSaturday("2026-11-16")).toBe("2026-11-21"); // Monday
     expect(weekSaturday("2026-11-20")).toBe("2026-11-21"); // Friday
+  });
+});
+
+describe("daysBetween", () => {
+  it("counts whole days, negative when going back", () => {
+    expect(daysBetween("2026-11-14", "2026-11-21")).toBe(7);
+    expect(daysBetween("2026-11-23", "2026-11-14")).toBe(-9);
+    expect(daysBetween("2026-11-23", "2026-11-23")).toBe(0);
   });
 });
 
